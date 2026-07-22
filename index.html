@@ -475,6 +475,25 @@ function saveSt(){
       alert('⚠️ Error al guardar: '+e.message);
     }
   }
+  pushRemoto();
+}
+
+var API_URL='https://script.google.com/macros/s/AKfycbycsLWJWcTbM2VWOoEby5na-K9s2O3KC8qtODW_0nOvKm-LG6MEY8k6hY2M_3_6GZh6/exec';
+var _pushTimer=null;
+function pushRemoto(){
+  if(_pushTimer)clearTimeout(_pushTimer);
+  _pushTimer=setTimeout(function(){
+    fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({data:JSON.stringify(st)})}).catch(function(){});
+  },800);
+}
+function cargarRemoto(cb){
+  fetch(API_URL).then(function(r){return r.json();}).then(function(data){
+    if(data&&typeof data==='object'&&data.tareas&&data.clientes){
+      st=data;
+      localStorage.setItem('bup3',JSON.stringify(st));
+    }
+    if(cb)cb();
+  }).catch(function(){if(cb)cb();});
 }
 
 var st=loadSt();
@@ -1420,54 +1439,51 @@ function exportVendedor(vid){
   h+='    var c="Notas - "+nombre+"\n========\n\n";var n=0;';
   h+='    tas.forEach(function(ta){if(!ta.value.trim())return;var tr=ta.closest("tr");var tds=tr?tr.querySelectorAll("td"):[];c+="- "+(tds[0]?tds[0].textContent.trim():"")+": "+ta.value.trim()+"\n";n++;});';
   h+='    if(!n){alert("Sin notas completadas.");return;}';
-  h+='    window.location.href="mailto:noelia.medina@buplasa.com?subject=Seguimiento+tareas&body="+encodeURIComponent(c);';
+  h+='    var ov=document.createElement("div");';
+  h+='    ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;";';
+  h+='    var box=document.createElement("div");';
+  h+='    box.style.cssText="background:#fff;border-radius:12px;padding:24px 28px;max-width:480px;width:90%;box-sizing:border-box;";';
+  h+='    var titulo=document.createElement("div");';
+  h+='    titulo.style.cssText="font-size:15px;font-weight:700;color:#004d4d;margin-bottom:10px;";';
+  h+='    titulo.textContent="Resumen para copiar y enviar";';
+  h+='    var ta2=document.createElement("textarea");';
+  h+='    ta2.readOnly=true;';
+  h+='    ta2.style.cssText="width:100%;height:180px;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box;";';
+  h+='    ta2.value=c;';
+  h+='    var fila=document.createElement("div");';
+  h+='    fila.style.cssText="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;";';
+  h+='    var bCop=document.createElement("button");';
+  h+='    bCop.textContent="Copiar";';
+  h+='    bCop.style.cssText="background:#57aba9;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;";';
+  h+='    var bMail=document.createElement("button");';
+  h+='    bMail.textContent="Enviar por mail";';
+  h+='    bMail.style.cssText="background:#004d4d;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;";';
+  h+='    var bCer=document.createElement("button");';
+  h+='    bCer.textContent="Cerrar";';
+  h+='    bCer.style.cssText="background:#f0f0f0;color:#666;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;";';
+  h+='    bCop.onclick=function(){ta2.focus();ta2.select();try{document.execCommand("copy");}catch(e){}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(c);}bCop.textContent="Copiado";};';
+  h+='    bMail.onclick=function(){window.location.href="mailto:noelia.medina@buplasa.com?subject=Seguimiento+tareas&body="+encodeURIComponent(c);};';
+  h+='    bCer.onclick=function(){document.body.removeChild(ov);};';
+  h+='    fila.appendChild(bCop);fila.appendChild(bMail);fila.appendChild(bCer);';
+  h+='    box.appendChild(titulo);box.appendChild(ta2);box.appendChild(fila);';
+  h+='    ov.appendChild(box);document.body.appendChild(ov);';
+  h+='    ta2.focus();ta2.select();';
   h+='  });';
   h+='});';
   h+='<\/scr'+'ipt>';
   h+='</body></html>';
 
-  // Subir al Drive via Apps Script y mostrar URL
+  // Descargar el reporte directo a la compu (sin depender de servicios externos)
   var _nombre='Tareas_'+v.nombre.replace(/\s+/g,'_')+'_'+today()+'.html';
-  var _loadDiv=document.createElement('div');
-  _loadDiv.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
-  _loadDiv.innerHTML='<div style="background:#fff;border-radius:12px;padding:28px 36px;text-align:center;max-width:400px;"><div style="font-size:15px;font-weight:600;color:#004d4d;margin-bottom:8px;">☁ Subiendo reporte...</div><div style="font-size:13px;color:#666;">Guardando en Google Drive</div></div>';
-  document.body.appendChild(_loadDiv);
-  fetch('https://script.google.com/macros/s/AKfycbyj-cWCCFOy6xJ6-BlXnNXg-0CdnYw44SRWKklfk1N07Cm7fbyMypc7uyZ5D_jymzd7/exec',{
-    method:'POST',
-    headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({action:'saveHtml',html:h,nombre:_nombre}),
-    mode:'cors'
-  }).then(function(r){return r.json();})
-  .then(function(data){
-    document.body.removeChild(_loadDiv);
-    if(data.ok&&data.viewUrl){
-      var popup=document.createElement('div');
-      popup.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
-      var viewUrl=data.viewUrl;
-      var pContent=document.createElement('div');
-      pContent.style.cssText='background:#fff;border-radius:12px;padding:28px 36px;text-align:center;max-width:480px;';
-      pContent.innerHTML='<div style="font-size:16px;font-weight:700;color:#004d4d;margin-bottom:8px;">✓ Reporte listo</div>'
-        +'<div style="font-size:13px;color:#666;margin-bottom:16px;">Copiá el link y mandáselo a '+v.nombre+'</div>'
-        +'<div id="gas-url-box" style="background:#f0f7f7;border-radius:8px;padding:10px 14px;font-size:12px;word-break:break-all;color:#004d4d;margin-bottom:16px;">'+viewUrl+'</div>'
-        +'<div style="display:flex;gap:8px;justify-content:center;">'
-        +'<button id="gas-btn-copiar" style="background:#57aba9;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;">📋 Copiar link</button>'
-        +'<button id="gas-btn-abrir" style="background:#004d4d;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;">🔗 Abrir</button>'
-        +'<button id="gas-btn-cerrar" style="background:#f0f0f0;color:#666;border:none;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;">Cerrar</button>'
-        +'</div>';
-      popup.appendChild(pContent);
-      document.body.appendChild(popup);
-      document.getElementById('gas-btn-copiar').onclick=function(){
-        navigator.clipboard.writeText(viewUrl).then(function(){document.getElementById('gas-btn-copiar').textContent='✓ Copiado';});
-      };
-      document.getElementById('gas-btn-abrir').onclick=function(){window.open(viewUrl,'_blank');};
-      document.getElementById('gas-btn-cerrar').onclick=function(){document.body.removeChild(popup);};
-    } else {
-      alert('Error al subir: '+(data.error||'desconocido'));
-    }
-  }).catch(function(err){
-    document.body.removeChild(_loadDiv);
-    alert('Error de conexión: '+err.message);
-  });
+  var _blob=new Blob([h],{type:'text/html'});
+  var _url=URL.createObjectURL(_blob);
+  var _a=document.createElement('a');
+  _a.href=_url;
+  _a.download=_nombre;
+  document.body.appendChild(_a);
+  _a.click();
+  document.body.removeChild(_a);
+  setTimeout(function(){URL.revokeObjectURL(_url);},1000);
 }
 
 
@@ -4362,7 +4378,22 @@ document.getElementById('btn-del-cli').addEventListener('click',function(){delCl
 document.getElementById('btn-exp-clidet').addEventListener('click',function(){exportSingleCliente(detClienteId);});
 
 curView='dashboard';
-renderDash();
+(function(){
+  var params=new URLSearchParams(window.location.search);
+  var vParam=params.get('v');
+  function irVista(){
+    if(vParam){
+      var vend=null;
+      for(var i=0;i<st.vendedores.length;i++){
+        var vv=st.vendedores[i];
+        if(vv.id===vParam||(vv.nombre||'').toLowerCase().indexOf(vParam.toLowerCase())===0){vend=vv;break;}
+      }
+      if(vend){fV=vend.id;fE='';nav('actividad');return;}
+    }
+    renderDash();
+  }
+  cargarRemoto(irVista);
+})();
 
 // Exportar datos
 document.getElementById('btn-exportar-datos').addEventListener('click',function(){
