@@ -1525,7 +1525,7 @@ function renderVendedores(){
     h+='</div>';
     // Contenido colapsable
     h+='<div id="'+vExpandId+'" style="display:none;border-top:0.5px solid var(--border);padding:14px 16px;">';
-    h+='<div style="display:flex;gap:6px;margin-bottom:12px;">';
+    h+='<div class="vend-toolbar" style="display:flex;gap:6px;margin-bottom:12px;">';
     h+='<button class="btn btn-sm" data-vfilt="'+v.id+'">Ver todas las tareas</button>';
     h+='<button class="btn btn-sm" onclick="window.open(location.pathname+\'?v=\'+\''+v.id+'\',\'_blank\')">🔗 Ver tareas</button>';
     h+='</div>';
@@ -1542,7 +1542,8 @@ function renderVendedores(){
         var eqExpandId='eq-proy-expand-'+v.id+'-'+pj.id;
         hh+='<div id="vc-eq-proy-'+v.id+'-'+pj.id+'" style="border:0.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;">';
         hh+='<div class="eq-proy-hdr" data-eqpid="'+pj.id+'" data-eqvid="'+v.id+'" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--bg);">';
-        hh+='<div><div style="font-size:13px;font-weight:500;">'+pj.nombre+'</div>';
+        hh+='<div><div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;">'+pj.nombre+(pj.respId!==v.id?'<span style="font-size:10.5px;font-weight:500;color:#712B13;background:#F5C4B3;padding:2px 8px;border-radius:20px;">Colaboración</span>':'')+'</div>';
+        if(pj.respId!==v.id)hh+='<div style="font-size:11px;color:var(--text-2);">Responsable: '+gV(pj.respId).nombre+'</div>';
         if(pclis.length)hh+='<div style="font-size:11px;color:var(--text-2);">'+pclis.map(function(cl){return cl.nombre;}).join(' · ')+'</div>';
         hh+='</div>';
         hh+='<div style="display:flex;align-items:center;gap:8px;">';
@@ -4389,7 +4390,27 @@ curView='dashboard';
         var vv=st.vendedores[i];
         if(vv.id===vParam||(vv.nombre||'').toLowerCase().indexOf(vParam.toLowerCase())===0){vend=vv;break;}
       }
-      if(vend){fV=vend.id;fE='';nav('actividad');return;}
+      if(vend){
+        nav('vendedores');
+        var tabsEl=document.querySelector('.tabs');if(tabsEl)tabsEl.style.display='none';
+        var beq=document.getElementById('btn-edit-eq');if(beq)beq.style.display='none';
+        var sh=document.querySelector('#vw-vendedores .sh');if(sh)sh.style.display='none';
+        var vcs=document.querySelectorAll('#vw-vendedores .vc');
+        for(var k=0;k<vcs.length;k++){
+          var hdr=vcs[k].querySelector('.vend-hdr');
+          if(hdr&&hdr.dataset.vendexpand==='vend-expand-'+vend.id){
+            vcs[k].style.display='block';
+            var panel=document.getElementById(hdr.dataset.vendexpand);
+            if(panel)panel.style.display='block';
+            var arrow=hdr.querySelector('.vend-arrow');if(arrow)arrow.style.display='none';
+            hdr.style.cursor='default';
+            var vt=vcs[k].querySelector('.vend-toolbar');if(vt)vt.style.display='none';
+          } else {
+            vcs[k].style.display='none';
+          }
+        }
+        return;
+      }
     }
     renderDash();
   }
