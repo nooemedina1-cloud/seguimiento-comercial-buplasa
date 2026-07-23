@@ -1339,6 +1339,7 @@ function exportVendedor(vid){
   }
 
   var h='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">';
+  h+='<scr'+'ipt>window.onerror=function(m,s,l,c){alert("Error del reporte: "+m+" (linea "+l+", columna "+c+")");return false;};<\/scr'+'ipt>';
   h+='<meta name="viewport" content="width=device-width,initial-scale=1">';
   h+='<title>Tareas - '+v.nombre+'</title>';
   h+='<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">';
