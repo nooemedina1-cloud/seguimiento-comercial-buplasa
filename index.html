@@ -498,6 +498,7 @@ function cargarRemoto(cb){
 
 var st=loadSt();
 var curView='dashboard';
+var vistaSoloVendedorId=null;
 var _lastOpenCid=null;   // cliente expandido
 var _lastOpenPid=null;   // proyecto expandido
 var _lastOpenChip=null;  // chip expandido (nombre cliente/fase)
@@ -1662,6 +1663,25 @@ function renderVendedores(){
         if(!open)bindProyNov(panel,pid);
       };
     })(phdrs[pi2]);
+  }
+  if(vistaSoloVendedorId){
+    var tabsElF=document.querySelector('.tabs');if(tabsElF)tabsElF.style.display='none';
+    var beqF=document.getElementById('btn-edit-eq');if(beqF)beqF.style.display='none';
+    var shF=document.querySelector('#vw-vendedores .sh');if(shF)shF.style.display='none';
+    var vcsF=document.querySelectorAll('#vw-vendedores .vc');
+    for(var kf=0;kf<vcsF.length;kf++){
+      var hdrF=vcsF[kf].querySelector('.vend-hdr');
+      if(hdrF&&hdrF.dataset.vendexpand==='vend-expand-'+vistaSoloVendedorId){
+        vcsF[kf].style.display='block';
+        var panelF=document.getElementById(hdrF.dataset.vendexpand);
+        if(panelF)panelF.style.display='block';
+        var arrowF=hdrF.querySelector('.vend-arrow');if(arrowF)arrowF.style.display='none';
+        hdrF.style.cursor='default';
+        var vtF=vcsF[kf].querySelector('.vend-toolbar');if(vtF)vtF.style.display='none';
+      } else {
+        vcsF[kf].style.display='none';
+      }
+    }
   }
 }
 
@@ -4391,24 +4411,8 @@ curView='dashboard';
         if(vv.id===vParam||(vv.nombre||'').toLowerCase().indexOf(vParam.toLowerCase())===0){vend=vv;break;}
       }
       if(vend){
+        vistaSoloVendedorId=vend.id;
         nav('vendedores');
-        var tabsEl=document.querySelector('.tabs');if(tabsEl)tabsEl.style.display='none';
-        var beq=document.getElementById('btn-edit-eq');if(beq)beq.style.display='none';
-        var sh=document.querySelector('#vw-vendedores .sh');if(sh)sh.style.display='none';
-        var vcs=document.querySelectorAll('#vw-vendedores .vc');
-        for(var k=0;k<vcs.length;k++){
-          var hdr=vcs[k].querySelector('.vend-hdr');
-          if(hdr&&hdr.dataset.vendexpand==='vend-expand-'+vend.id){
-            vcs[k].style.display='block';
-            var panel=document.getElementById(hdr.dataset.vendexpand);
-            if(panel)panel.style.display='block';
-            var arrow=hdr.querySelector('.vend-arrow');if(arrow)arrow.style.display='none';
-            hdr.style.cursor='default';
-            var vt=vcs[k].querySelector('.vend-toolbar');if(vt)vt.style.display='none';
-          } else {
-            vcs[k].style.display='none';
-          }
-        }
         return;
       }
     }
