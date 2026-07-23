@@ -1527,7 +1527,7 @@ function renderVendedores(){
     h+='<div id="'+vExpandId+'" style="display:none;border-top:0.5px solid var(--border);padding:14px 16px;">';
     h+='<div style="display:flex;gap:6px;margin-bottom:12px;">';
     h+='<button class="btn btn-sm" data-vfilt="'+v.id+'">Ver todas las tareas</button>';
-    h+='<button class="btn btn-sm" onclick="exportVendedor(\'' +v.id+ '\')">↓ Exportar</button>';
+    h+='<button class="btn btn-sm" onclick="window.open(location.pathname+\'?v=\'+\''+v.id+'\',\'_blank\')">🔗 Ver tareas</button>';
     h+='</div>';
     // Separar proyectos propios vs colaboraciones
     var vPropios=vProys.filter(function(pf){return pf.respId===v.id;});
