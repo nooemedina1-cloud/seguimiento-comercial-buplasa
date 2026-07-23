@@ -3750,7 +3750,45 @@ function delTarea(){
   saveSt();closeOv('ov-tarea');renderAndRestore();
 }
 
+function _capturarAbiertos(){
+  // Genérico: guarda qué fases/clientes de proyecto estaban abiertos (Proyectos y Vendedores comparten renderProyExpand)
+  var cont=document.getElementById('vw-'+curView);
+  var out={nested:[],eq:[]};
+  if(!cont)return out;
+  var nEls=cont.querySelectorAll('[id^="fase-expand-"],[id^="proy-cli-expand-"]');
+  for(var i=0;i<nEls.length;i++){if(nEls[i].style.display==='block')out.nested.push(nEls[i].id);}
+  var eEls=cont.querySelectorAll('[id^="eq-proy-expand-"]');
+  for(var j=0;j<eEls.length;j++){if(eEls[j].style.display==='block')out.eq.push(eEls[j].id);}
+  return out;
+}
+function _reabrirAnidados(scopeId){
+  var cont=document.getElementById(scopeId);
+  if(!cont||!window._abiertosSnapshot)return;
+  window._abiertosSnapshot.nested.forEach(function(id){
+    var el=cont.querySelector('#'+CSS.escape(id));
+    if(!el)return;
+    el.style.display='block';
+    var faseHdr=cont.querySelector('[data-faseid="'+id+'"]');
+    if(faseHdr){var farr=faseHdr.querySelector('.fase-arrow');if(farr)farr.textContent='▼';}
+    var cliHdr=cont.querySelector('[data-clexpand="'+id+'"]');
+    if(cliHdr){var carr=cliHdr.querySelector('.proycli-arrow');if(carr)carr.textContent='▲';}
+  });
+  window._abiertosSnapshot.eq.forEach(function(id){
+    var el=cont.querySelector('#'+CSS.escape(id));
+    if(!el)return;
+    el.style.display='block';
+    var hdrs=cont.querySelectorAll('.eq-proy-hdr');
+    for(var k=0;k<hdrs.length;k++){
+      if('eq-proy-expand-'+hdrs[k].dataset.eqvid+'-'+hdrs[k].dataset.eqpid===id){
+        var arr=hdrs[k].querySelector('.eq-proy-arrow');if(arr)arr.textContent='▲';
+        break;
+      }
+    }
+  });
+}
 function renderAndRestore(){
+  var _scrollY=window.scrollY;
+  window._abiertosSnapshot=_capturarAbiertos();
   render(curView);
   // Restaurar cliente expandido
   if(curView==='clientes'&&_lastOpenCid){
@@ -3762,6 +3800,7 @@ function renderAndRestore(){
         if(arr)arr.textContent='▼';
         openDetalleCliente(_lastOpenCid,'cliexp-body-'+_lastOpenCid);
       }
+      window.scrollTo(0,_scrollY);
     },50);
   }
   // Restaurar proyecto expandido
@@ -3775,7 +3814,16 @@ function renderAndRestore(){
         hdr.dataset.expanded='1';
         // Rebindear
         bindProyExpandHandlers(panel, _lastOpenPid);
+        _reabrirAnidados('vw-proyectos');
       }
+      window.scrollTo(0,_scrollY);
+    },50);
+  }
+  // Restaurar vista por vendedor (proyectos/fases/clientes que estaban abiertos)
+  if(curView==='vendedores'){
+    setTimeout(function(){
+      _reabrirAnidados('vw-vendedores');
+      window.scrollTo(0,_scrollY);
     },50);
   }
 }
