@@ -1430,7 +1430,7 @@ function exportVendedor(vid){
 
   // LocalStorage para notas
   h+='<scr'+'ipt>';
-  h+='document.addEventListener("DOMContentLoaded",function(){';
+  h+='(function(){';
   h+='  document.querySelectorAll("textarea[data-tid]").forEach(function(ta){var k="nota_"+ta.dataset.tid;var sv=localStorage.getItem(k);if(sv)ta.value=sv;ta.addEventListener("input",function(){localStorage.setItem(k,ta.value);});});';
   h+='  var btn=document.getElementById("btn-enviar-noe");';
   h+='  if(btn)btn.addEventListener("click",function(){';
@@ -1469,7 +1469,7 @@ function exportVendedor(vid){
   h+='    ov.appendChild(box);document.body.appendChild(ov);';
   h+='    ta2.focus();ta2.select();';
   h+='  });';
-  h+='});';
+  h+='})();';
   h+='<\/scr'+'ipt>';
   h+='</body></html>';
 
