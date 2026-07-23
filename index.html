@@ -443,6 +443,15 @@ function loadSt(){
       var t=d.tareas[i];
       if(!t.vIds){t.vIds=t.vId?[t.vId]:[];delete t.vId;}
     }
+    // Migración: heredar cliId de la reunión en tareas que no lo tengan
+    for(var mri=0;mri<d.tareas.length;mri++){
+      var mrt=d.tareas[mri];
+      if(mrt.cliId)continue;
+      if(!mrt.rId)continue;
+      var mrR=null;
+      for(var mrj=0;mrj<d.reuniones.length;mrj++){if(d.reuniones[mrj].id===mrt.rId){mrR=d.reuniones[mrj];break;}}
+      if(mrR&&mrR.cliId)mrt.cliId=mrR.cliId;
+    }
     // Migración: vincular tareas huérfanas a proyectos por nombre de cliente
     for(var mi=0;mi<d.proyectos.length;mi++){
       var mp=d.proyectos[mi];
@@ -3996,6 +4005,7 @@ function saveReunion(){
             if(estEl)st.tareas[k].est=estEl.value;
             if(tPId)st.tareas[k].pId=tPId;
             if(tFaseVal)st.tareas[k].fase=tFaseVal;
+            if(cliId&&!st.tareas[k].cliId)st.tareas[k].cliId=cliId;
             // Agregar tarea al proyecto si no está
             if(tPId){var pjt=gP(tPId);if(pjt&&(pjt.tIds||[]).indexOf(tid)<0){pjt.tIds=pjt.tIds||[];pjt.tIds.push(tid);}}
             break;
@@ -4004,7 +4014,7 @@ function saveReunion(){
       } else {
         var nId='t'+Date.now()+Math.floor(Math.random()*1000);
         r.tIds.push(nId);
-        var newT={id:nId,tit:tit,rId:editReunionId,vIds:vIds,vence:vence,est:'pendiente',motivo:'',notas:'',pId:tPId,fase:tFaseVal};
+        var newT={id:nId,tit:tit,rId:editReunionId,vIds:vIds,vence:vence,est:'pendiente',motivo:'',notas:'',cliId:cliId,pId:tPId,fase:tFaseVal};
         st.tareas.push(newT);
         if(tPId){var pjn=gP(tPId);if(pjn){pjn.tIds=pjn.tIds||[];pjn.tIds.push(nId);}}
       }
@@ -4021,7 +4031,7 @@ function saveReunion(){
       var tPIdN=tProyN?tProyN.value:'';var tFaseValN=tFaseN?tFaseN.value:'';
       var nIdd='t'+Date.now()+Math.floor(Math.random()*9999);
       tIds.push(nIdd);
-      st.tareas.push({id:nIdd,tit:titt,rId:rId,vIds:vIdds,vence:vencee,est:'pendiente',motivo:'',notas:'',pId:tPIdN,fase:tFaseValN});
+      st.tareas.push({id:nIdd,tit:titt,rId:rId,vIds:vIdds,vence:vencee,est:'pendiente',motivo:'',notas:'',cliId:cliId,pId:tPIdN,fase:tFaseValN});
       if(tPIdN){var pjnn=gP(tPIdN);if(pjnn){pjnn.tIds=pjnn.tIds||[];pjnn.tIds.push(nIdd);}}
     }
     st.reuniones.push({id:rId,titulo:titulo,fecha:fecha,temas:temas,participantes:partic,cliId:cliId,novedades:[],adjuntos:openReunionModal._adjuntos||[],tIds:tIds});
