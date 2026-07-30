@@ -1273,6 +1273,7 @@ function renderDash(){
 var actSubView='tareas';
 var fV='',fE='',fP='';
 var tareaVistaModo='lista';
+var verCompletadas=false;
 function renderActividad(){
   var h='';
   h+='<div class="sh"><h2>Actividad</h2><div style="display:flex;gap:8px;">';
@@ -1315,6 +1316,8 @@ function renderActividad(){
   if(fpEl)fpEl.addEventListener('change',function(){fP=this.value;renderActividad();});
   var clEl=document.getElementById('btn-limpiar');
   if(clEl)clEl.addEventListener('click',function(){fV='';fE='';fP='';renderActividad();});
+  var tcEl=document.getElementById('btn-toggle-comp');
+  if(tcEl)tcEl.addEventListener('click',function(){verCompletadas=!verCompletadas;renderActividad();});
   bindTRows('vw-actividad');
   bindRItems('vw-actividad');
   if(actSubView==='tareas'&&tareaVistaModo==='tablero')bindKanbanDrag();
@@ -1324,9 +1327,13 @@ function renderActividad(){
 function renderTareasHTML(){
   var tareas=[].concat(st.tareas);
   if(fV)tareas=tareas.filter(function(t){return (t.vIds||[]).indexOf(fV)>=0;});
+  var completadasOcultas=0;
   if(fE){
     if(fE==='incumplida')tareas=tareas.filter(function(t){return effE(t)==='incumplida';});
     else tareas=tareas.filter(function(t){return t.est===fE&&!isOv(t);});
+  } else if(!verCompletadas){
+    completadasOcultas=tareas.filter(function(t){return t.est==='completada';}).length;
+    tareas=tareas.filter(function(t){return t.est!=='completada';});
   }
   if(fP)tareas=tareas.filter(function(t){return (t.prioridad||'normal')===fP;});
   tareas.sort(function(a,b){
@@ -1354,6 +1361,10 @@ function renderTareasHTML(){
   }
   h+='</select>';
   if(fV||fE||fP)h+='<button class="btn btn-sm" id="btn-limpiar">Limpiar</button>';
+  if(!fE){
+    if(verCompletadas)h+='<button class="btn btn-sm" id="btn-toggle-comp">▲ Ocultar completadas</button>';
+    else if(completadasOcultas>0)h+='<button class="btn btn-sm" id="btn-toggle-comp">Ver completadas ('+completadasOcultas+')</button>';
+  }
   h+='</div>';
   h+='<div class="tbl-wrap"><table><thead><tr><th>Tarea</th><th>Proyecto</th><th>Cliente</th><th>Responsables</th><th>Vence</th><th>Prioridad</th><th>Estado</th></tr></thead><tbody>';
   if(!tareas.length){
@@ -1829,6 +1840,7 @@ function renderVendedores(){
         var arrow=hdr.querySelector('.eq-proy-arrow');
         if(arrow)arrow.textContent=open?'▼':'▲';
         // Bindear siempre (no solo al abrir) para evitar problemas de estado
+        function bindPanelContents(){
         // Fases expandibles
         var faseHdrsEq=panel.querySelectorAll('.fase-hdr');
         for(var fhi=0;fhi<faseHdrsEq.length;fhi++){
@@ -1873,7 +1885,12 @@ function renderVendedores(){
         if(btnEd){(function(p){btnEd.onclick=function(ev){ev.stopPropagation();openProyectoModal(p);};})(pid);}
         var btnNT=panel.querySelector('[id^="pdet-btn-nueva-tarea-"]');
         if(btnNT){(function(p){btnNT.onclick=function(ev){ev.stopPropagation();openEditTareaConProy(p);};})(pid);}
-        if(!open)bindProyNov(panel,pid);
+        // Botón ver/ocultar completadas
+        var btnComp3=panel.querySelector('[id^="pdet-btn-comp-"]');
+        if(btnComp3){(function(p,vv){btnComp3.onclick=function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;panel.innerHTML=renderProyExpand(p,vv);bindPanelContents();};})(pid,vid);}
+        bindProyNov(panel,pid);
+        }
+        bindPanelContents();
       };
     })(phdrs[pi2]);
   }
@@ -2565,9 +2582,23 @@ function openDetalleCliente(cid,inlineBodyId){
   hFicha+='</div>';
 
     // Proyectos vinculados (con tareas)
+  var totalCompOcultasCli=0;
+  if(!verCompletadas){
+    for(var _pi=0;_pi<proys.length;_pi++){
+      var _pt2=tByP(proys[_pi].id).filter(function(t){
+        if(t.cliId===cid)return true;
+        if(t.cliId){var _tc=gC(t.cliId);if(_tc&&_tc.nombre===c.nombre)return true;}
+        return false;
+      });
+      totalCompOcultasCli+=_pt2.filter(function(t){return t.est==='completada';}).length;
+    }
+  }
   if(proys.length){
     hAct+='<div class="cli-det-sec">';
-    hAct+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div class="sl" style="margin-bottom:0;">Proyectos ('+proys.length+')</div></div>';
+    hAct+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div class="sl" style="margin-bottom:0;">Proyectos ('+proys.length+')</div>';
+    if(verCompletadas)hAct+='<button class="btn btn-sm" id="clidet-btn-comp">▲ Ocultar completadas</button>';
+    else if(totalCompOcultasCli>0)hAct+='<button class="btn btn-sm" id="clidet-btn-comp">Ver completadas ('+totalCompOcultasCli+')</button>';
+    hAct+='</div>';
     for(var pi=0;pi<proys.length;pi++){
       var p=proys[pi];var vp=gV(p.respId);
       var cliEnProy=null;
@@ -2648,7 +2679,9 @@ function openDetalleCliente(cid,inlineBodyId){
             hAct+='<div id="'+fcExpandId+'" style="display:none;">';
           }
           for(var pti=0;pti<fcTareas.length;pti++){
-            var pt=fcTareas[pti];var pe=effE(pt);
+            var pt=fcTareas[pti];
+            if(!verCompletadas&&pt.est==='completada')continue;
+            var pe=effE(pt);
             hAct+='<div class="tr-c" data-tid="'+pt.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:0.5px solid var(--border);">';
             hAct+='<div style="flex-shrink:0;display:flex;gap:2px;">'+mkAvs(pt.vIds)+'</div>';
             hAct+='<div style="flex:1;font-size:13px;">'+pt.tit+'</div>';
@@ -2808,6 +2841,9 @@ var bodyEl2=document.getElementById(bodyId);if(bodyEl2)bodyEl2.innerHTML=h;
   // Botón nueva reunión desde ficha cliente
   var btnNR=document.getElementById('clidet-btn-nueva-reunion');
   if(btnNR){(function(cid){btnNR.addEventListener('click',function(){if(!inlineBodyId)closeOv('ov-clidet');setTimeout(function(){openReunionModal(null,cid);},100);});})(detClienteId);}
+  // Botón ver/ocultar completadas
+  var btnComp=document.getElementById('clidet-btn-comp');
+  if(btnComp){(function(cid,inlId){btnComp.addEventListener('click',function(){verCompletadas=!verCompletadas;openDetalleCliente(cid,inlId);});})(detClienteId,inlineBodyId);}
 
   if(!inlineBodyId)openOv('ov-clidet');
 }
@@ -2847,11 +2883,18 @@ function renderProyExpand(pid,filtroVId){
     }
   }
   var clis=p.clientes||[];
+  var compOcultoExpand=0;
+  if(!verCompletadas){
+    compOcultoExpand=ts.filter(function(t){return t.est==='completada';}).length;
+    ts=ts.filter(function(t){return t.est!=='completada';});
+  }
   var h='';
   // Botones acción
-  h+='<div style="display:flex;gap:6px;margin-bottom:12px;">';
+  h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">';
   h+='<button class="btn btn-sm" id="pdet-btn-edit-'+pid+'">✏️ Editar proyecto</button>';
   h+='<button class="btn btn-sm btn-p" id="pdet-btn-nueva-tarea-'+pid+'">+ Nueva tarea</button>';
+  if(verCompletadas)h+='<button class="btn btn-sm" id="pdet-btn-comp-'+pid+'">▲ Ocultar completadas</button>';
+  else if(compOcultoExpand>0)h+='<button class="btn btn-sm" id="pdet-btn-comp-'+pid+'">Ver completadas ('+compOcultoExpand+')</button>';
   // resultado se muestra por cliente
   h+='</div>';
   // Bifurcar por tipo de proyecto
@@ -3117,23 +3160,48 @@ function renderProyectos(){
         panel.style.display='block';
         var p2=gP(pid);
         if(!p2){panel.innerHTML='';return;}
-        var h2='<div style="background:var(--bg);border-radius:var(--r-lg);border:1px solid var(--primary);overflow:hidden;margin-top:4px;">';
-        if(cliName){
-          // Mostrar fases del cliente en este proyecto
-          var clObj=(p2.clientes||[]).find(function(c){return c.nombre===cliName;});
-          var clTareas=tByP(pid).filter(function(t){var tc=t.cliId?gC(t.cliId):null;return (t.cliId&&tc&&tc.nombre===cliName)||(!t.cliId&&t.fase&&clObj&&clObj.fase===t.fase);});
-          h2+='<div style="padding:10px 14px;background:linear-gradient(135deg,#004d4d,#006666);display:flex;justify-content:space-between;">';
-          h2+='<span style="color:#fff;font-weight:600;font-size:13px;">'+cliName+'</span>';
-          if(clObj){h2+=mkBadgeP(clObj.estado||'');if(clObj.valor)h2+='<span style="color:rgba(255,255,255,.8);font-size:12px;">$'+Number(clObj.valor).toLocaleString()+'</span>';}
-          h2+='</div>';
-          // Tareas por fase
-          var faseMapC={};var faseOrderC=[];
-          clTareas.forEach(function(t){var fk=t.fase||'__sf';if(!faseMapC[fk]){faseMapC[fk]=[];faseOrderC.push(fk);}faseMapC[fk].push(t);});
-          h2+='<div style="padding:10px;">';
-          faseOrderC.forEach(function(fk){
-            var fl=fk==='__sf'?'Sin fase':fk;
-            if(fk!=='__sf')h2+='<div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:4px;">📌 '+fl+'</div>';
-            faseMapC[fk].forEach(function(t){
+        function renderChipPanel(){
+          var h2='<div style="background:var(--bg);border-radius:var(--r-lg);border:1px solid var(--primary);overflow:hidden;margin-top:4px;">';
+          var compOcultasChip=0;
+          if(cliName){
+            // Mostrar fases del cliente en este proyecto
+            var clObj=(p2.clientes||[]).find(function(c){return c.nombre===cliName;});
+            var clTareasAll=tByP(pid).filter(function(t){var tc=t.cliId?gC(t.cliId):null;return (t.cliId&&tc&&tc.nombre===cliName)||(!t.cliId&&t.fase&&clObj&&clObj.fase===t.fase);});
+            var clTareas=clTareasAll;
+            if(!verCompletadas){compOcultasChip=clTareasAll.filter(function(t){return t.est==='completada';}).length;clTareas=clTareasAll.filter(function(t){return t.est!=='completada';});}
+            h2+='<div style="padding:10px 14px;background:linear-gradient(135deg,#004d4d,#006666);display:flex;justify-content:space-between;">';
+            h2+='<span style="color:#fff;font-weight:600;font-size:13px;">'+cliName+'</span>';
+            if(clObj){h2+=mkBadgeP(clObj.estado||'');if(clObj.valor)h2+='<span style="color:rgba(255,255,255,.8);font-size:12px;">$'+Number(clObj.valor).toLocaleString()+'</span>';}
+            h2+='</div>';
+            // Tareas por fase
+            var faseMapC={};var faseOrderC=[];
+            clTareas.forEach(function(t){var fk=t.fase||'__sf';if(!faseMapC[fk]){faseMapC[fk]=[];faseOrderC.push(fk);}faseMapC[fk].push(t);});
+            h2+='<div style="padding:10px;">';
+            faseOrderC.forEach(function(fk){
+              var fl=fk==='__sf'?'Sin fase':fk;
+              if(fk!=='__sf')h2+='<div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:4px;">📌 '+fl+'</div>';
+              faseMapC[fk].forEach(function(t){
+                var e=effE(t);
+                h2+='<div class="tr-c" data-tid="'+t.id+'" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:var(--r);margin-bottom:4px;">';
+                h2+='<div style="flex-shrink:0;display:flex;gap:2px;">'+mkAvs(t.vIds)+'</div>';
+                h2+='<div style="flex:1;font-size:13px;">'+t.tit+'</div>';
+                h2+='<div style="font-size:11px;color:var(--text-2);">'+fmtD(t.vence)+'</div>';
+                h2+=mkBadge(e)+'</div>';
+              });
+            });
+            if(!clTareas.length)h2+='<div style="font-size:13px;color:var(--text-2);padding:4px;">Sin tareas.</div>';
+            if(compOcultasChip>0)h2+='<button class="btn btn-sm" id="chippanel-btn-comp" style="width:100%;margin-top:4px;">Ver completadas ('+compOcultasChip+')</button>';
+            else if(verCompletadas)h2+='<button class="btn btn-sm" id="chippanel-btn-comp" style="width:100%;margin-top:4px;">▲ Ocultar completadas</button>';
+            h2+='</div>';
+          } else if(faseName){
+            // Mostrar tareas de la fase
+            var faseTareasAll=tByP(pid).filter(function(t){return t.fase===faseName;});
+            var faseTareas=faseTareasAll;
+            if(!verCompletadas){compOcultasChip=faseTareasAll.filter(function(t){return t.est==='completada';}).length;faseTareas=faseTareasAll.filter(function(t){return t.est!=='completada';});}
+            h2+='<div style="padding:10px 14px;background:linear-gradient(135deg,#004d4d,#006666);">';
+            h2+='<span style="color:#fff;font-weight:600;font-size:13px;">📌 '+faseName+'</span>';
+            h2+='</div><div style="padding:10px;">';
+            faseTareas.forEach(function(t){
               var e=effE(t);
               h2+='<div class="tr-c" data-tid="'+t.id+'" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:var(--r);margin-bottom:4px;">';
               h2+='<div style="flex-shrink:0;display:flex;gap:2px;">'+mkAvs(t.vIds)+'</div>';
@@ -3141,32 +3209,21 @@ function renderProyectos(){
               h2+='<div style="font-size:11px;color:var(--text-2);">'+fmtD(t.vence)+'</div>';
               h2+=mkBadge(e)+'</div>';
             });
-          });
-          if(!clTareas.length)h2+='<div style="font-size:13px;color:var(--text-2);padding:4px;">Sin tareas.</div>';
+            if(!faseTareas.length)h2+='<div style="font-size:13px;color:var(--text-2);padding:4px;">Sin tareas.</div>';
+            if(compOcultasChip>0)h2+='<button class="btn btn-sm" id="chippanel-btn-comp" style="width:100%;margin-top:4px;">Ver completadas ('+compOcultasChip+')</button>';
+            else if(verCompletadas)h2+='<button class="btn btn-sm" id="chippanel-btn-comp" style="width:100%;margin-top:4px;">▲ Ocultar completadas</button>';
+            h2+='</div>';
+          }
           h2+='</div>';
-        } else if(faseName){
-          // Mostrar tareas de la fase
-          var faseTareas=tByP(pid).filter(function(t){return t.fase===faseName;});
-          h2+='<div style="padding:10px 14px;background:linear-gradient(135deg,#004d4d,#006666);">';
-          h2+='<span style="color:#fff;font-weight:600;font-size:13px;">📌 '+faseName+'</span>';
-          h2+='</div><div style="padding:10px;">';
-          faseTareas.forEach(function(t){
-            var e=effE(t);
-            h2+='<div class="tr-c" data-tid="'+t.id+'" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:var(--r);margin-bottom:4px;">';
-            h2+='<div style="flex-shrink:0;display:flex;gap:2px;">'+mkAvs(t.vIds)+'</div>';
-            h2+='<div style="flex:1;font-size:13px;">'+t.tit+'</div>';
-            h2+='<div style="font-size:11px;color:var(--text-2);">'+fmtD(t.vence)+'</div>';
-            h2+=mkBadge(e)+'</div>';
+          panel.innerHTML=h2;
+          // Bindear tareas
+          panel.querySelectorAll('[data-tid]').forEach(function(el){
+            el.addEventListener('click',function(e){e.stopPropagation();openEditTarea(el.dataset.tid);});
           });
-          if(!faseTareas.length)h2+='<div style="font-size:13px;color:var(--text-2);padding:4px;">Sin tareas.</div>';
-          h2+='</div>';
+          var btnC=document.getElementById('chippanel-btn-comp');
+          if(btnC)btnC.addEventListener('click',function(e){e.stopPropagation();verCompletadas=!verCompletadas;renderChipPanel();});
         }
-        h2+='</div>';
-        panel.innerHTML=h2;
-        // Bindear tareas
-        panel.querySelectorAll('[data-tid]').forEach(function(el){
-          el.addEventListener('click',function(e){e.stopPropagation();openEditTarea(el.dataset.tid);});
-        });
+        renderChipPanel();
       });
     })(chips[ci2]);
   }
@@ -3233,7 +3290,13 @@ function openProyectoModal(pid){
   // TIPO DESARROLLO: agrupar tareas por fase (ignorar cliId — las tareas pertenecen a la fase)
   var todasTareas=p?tByP(pid):[];
   var fases={};var fasesOrder=[];
-  // Primero registrar fases de clientes (para orden)
+  // Primero registrar las fases/hitos ya guardados en el proyecto (aunque estén vacíos, sin tareas todavía)
+  var fasesGuardadas=p?(p.fases||[]):[];
+  for(var fg=0;fg<fasesGuardadas.length;fg++){
+    var fgNom=fasesGuardadas[fg];
+    if(!fases[fgNom]){fases[fgNom]={clis:[],tareas:[]};fasesOrder.push(fgNom);}
+  }
+  // Registrar fases de clientes (para orden)
   for(var i=0;i<clis.length;i++){
     var fKey=clis[i].fase||'__sin_fase__';
     if(!fases[fKey]){fases[fKey]={clis:[],tareas:[]};fasesOrder.push(fKey);}
@@ -3646,10 +3709,12 @@ function saveProyecto(){
     }
   } else {
   var faseBlocks=document.querySelectorAll('#pj-clientes .pj-fase-block');
+  var fasesNombres=[];
   for(var fi=0;fi<faseBlocks.length;fi++){
     var fb=faseBlocks[fi];
     var faseNomEl=fb.querySelector('.pj-fase-nombre');
     var faseNomVal=faseNomEl?faseNomEl.value.trim():'';
+    if(faseNomVal&&fasesNombres.indexOf(faseNomVal)<0)fasesNombres.push(faseNomVal);
 
     // Tareas de la fase (directas, no de clientes)
     var tRows=fb.querySelectorAll('.pcl-tareas > .pcl-tarea-row');
@@ -3702,7 +3767,7 @@ function saveProyecto(){
 
   if(editProyectoId){
     var p=gP(editProyectoId);
-    p.nombre=nombre;p.desc=desc;p.respId=respId;p.inicio=inicio;p.resultado=resultado;p.tipo=tipo;p.clientes=clis;
+    p.nombre=nombre;p.desc=desc;p.respId=respId;p.inicio=inicio;p.resultado=resultado;p.tipo=tipo;p.clientes=clis;p.fases=fasesNombres||[];
     // IDs de tareas visibles en el modal
     var tidsEnModal=tareasPorCli.map(function(tc){return tc.tid;}).filter(Boolean);
     // Eliminar del proyecto las tareas que fueron removidas del modal
@@ -3739,7 +3804,7 @@ function saveProyecto(){
       tIds.push(nId2);
       st.tareas.push({id:nId2,tit:tc2.tit,pId:pId,rId:'',vIds:tc2.vIds,vence:tc2.vence,est:'pendiente',prioridad:tc2.prioridad||'normal',motivo:'',cliId:tc2.cliId||'',fase:tc2.fase||'',notas:'',novedades:[]});
     }
-    st.proyectos.push({id:pId,nombre:nombre,desc:desc,respId:respId,inicio:inicio,resultado:resultado,tipo:tipo,clientes:clis,novedades:[],tIds:tIds});
+    st.proyectos.push({id:pId,nombre:nombre,desc:desc,respId:respId,inicio:inicio,resultado:resultado,tipo:tipo,clientes:clis,fases:fasesNombres||[],novedades:[],tIds:tIds});
   }
   saveSt();closeOv('ov-proyecto');closeOv('ov-pdet');render(curView);
 }
@@ -4872,6 +4937,9 @@ function bindProyExpandHandlers(div, pid){
   // botón editar
   var btnEd=div.querySelector('#pdet-btn-edit-'+pid);
   if(btnEd){(function(p){btnEd.addEventListener('click',function(ev){ev.stopPropagation();openProyectoModal(p);});})(pid);}
+  // botón ver/ocultar completadas
+  var btnComp2=div.querySelector('#pdet-btn-comp-'+pid);
+  if(btnComp2){(function(p,d){btnComp2.addEventListener('click',function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;d.innerHTML=renderProyExpand(p);bindProyExpandHandlers(d,p);});})(pid,div);}
   bindProyNov(div,pid);
 }
 </script>
