@@ -171,6 +171,7 @@ select:focus,input:focus{border-color:var(--primary);}
         <div class="fg"><label>Fecha</label><input type="date" id="rn-fecha"></div>
         <div class="fg"><label>Cliente vinculado</label><select id="rn-cli"></select></div>
       </div>
+      <div class="fg"><label>Proyecto vinculado</label><select id="rn-proy"></select></div>
       <div class="fg"><label>Minuta / Temas tratados</label><textarea id="rn-temas" rows="4" placeholder="Puntos principales, observaciones, compromisos..."></textarea></div>
       <div class="fg">
         <label>Adjuntos (máx. 2)</label>
@@ -624,8 +625,17 @@ function mkCliOpts(selId){
   }
   return h;
 }
+function mkProyOpts(selId){
+  var h='<option value="">— Sin proyecto —</option>';
+  for(var i=0;i<st.proyectos.length;i++){
+    var p=st.proyectos[i];
+    h+='<option value="'+p.id+'"'+(p.id===selId?' selected':'')+'>'+p.nombre+'</option>';
+  }
+  return h;
+}
 function tByCli(cid){return st.tareas.filter(function(t){return t.cliId===cid;});}
 function rByCli(cid){return st.reuniones.filter(function(r){return r.cliId===cid;});}
+function rByProy(pid){return st.reuniones.filter(function(r){return r.pId===pid;});}
 var ETAPAS_CLI=['activo','inactivo'];
 var ETAPAS_CLI_LBL={activo:'Activo',inactivo:'Inactivo'};
 var PRIORIDADES=['urgente','alta','normal','baja'];
@@ -1586,12 +1596,13 @@ function renderReunionesHTML(){
     for(var i=0;i<list.length;i++){
       var r=list[i];var ts=tByR(r.id);var s=stats(ts);
       var cliNom=r.cliId?gC(r.cliId):'';
+      var proyNomR=r.pId?gP(r.pId):null;
       var parts='';
       for(var j=0;j<r.participantes.length;j++)parts+=mkAv(gV(r.participantes[j]),false);
       h+='<div class="ri" data-rid="'+r.id+'">';
       h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
       h+='<div>';
-      h+='<div class="ri-d">'+fmtDF(r.fecha)+(cliNom?' &middot; <strong>'+cliNom.nombre+'</strong>':'')+'</div>';
+      h+='<div class="ri-d">'+fmtDF(r.fecha)+(cliNom?' &middot; <strong>'+cliNom.nombre+'</strong>':'')+(proyNomR?' &middot; 📁 '+proyNomR.nombre:'')+'</div>';
       h+='<div class="ri-t">'+r.titulo+'</div>';
       h+='<div style="font-size:12px;color:var(--text-2);">'+ts.length+' tareas &middot; '+s.done+' completadas &middot; '+s.late+' no cumplidas</div>';
       h+='</div>';
@@ -1956,6 +1967,11 @@ function renderVendedores(){
         // Botón ver/ocultar completadas
         var btnComp3=panel.querySelector('[id^="pdet-btn-comp-"]');
         if(btnComp3){(function(p,vv){btnComp3.onclick=function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;panel.innerHTML=renderProyExpand(p,vv);bindPanelContents();};})(pid,vid);}
+        // Reuniones vinculadas
+        var rEls3=panel.querySelectorAll('[data-rid]');
+        for(var rei2=0;rei2<rEls3.length;rei2++){
+          (function(rel){rel.onclick=function(ev){ev.stopPropagation();openDetalle(rel.dataset.rid);};})(rEls3[rei2]);
+        }
         bindProyNov(panel,pid);
         }
         bindPanelContents();
@@ -2017,12 +2033,13 @@ function exportProyectos(){
   downloadCSV('proyectos_buplasa.csv',rows);
 }
 function exportReuniones(){
-  var rows=[['Fecha','Título','Cliente','Participantes','Tareas total','Completadas','Minuta']];
+  var rows=[['Fecha','Título','Cliente','Proyecto','Participantes','Tareas total','Completadas','Minuta']];
   for(var i=0;i<st.reuniones.length;i++){
     var r=st.reuniones[i];var ts=tByR(r.id);var s=stats(ts);
     var parts=r.participantes.map(function(vid){return gV(vid).nombre;}).join(' | ');
     var cliNom=r.cliId&&gC(r.cliId)?gC(r.cliId).nombre:'';
-    rows.push([r.fecha,r.titulo,cliNom,parts,ts.length,s.done,r.temas]);
+    var proyNomEx=r.pId&&gP(r.pId)?gP(r.pId).nombre:'';
+    rows.push([r.fecha,r.titulo,cliNom,proyNomEx,parts,ts.length,s.done,r.temas]);
   }
   downloadCSV('reuniones_buplasa.csv',rows);
 }
@@ -2078,10 +2095,12 @@ function exportSingleReunion(rid){
   var ts=tByR(rid);
   var parts=r.participantes.map(function(vid){return gV(vid).nombre;}).join(', ');
   var cliNom=r.cliId&&gC(r.cliId)?gC(r.cliId).nombre:'';
+  var proyNomSing=r.pId&&gP(r.pId)?gP(r.pId).nombre:'';
   var body='<div class="card">';
   body+='<div class="meta">';
   body+='<div class="meta-item"><label>Fecha</label><span>'+fmtDF(r.fecha)+'</span></div>';
   if(cliNom)body+='<div class="meta-item"><label>Cliente</label><span>'+cliNom+'</span></div>';
+  if(proyNomSing)body+='<div class="meta-item"><label>Proyecto</label><span>'+proyNomSing+'</span></div>';
   body+='<div class="meta-item"><label>Participantes</label><span>'+parts+'</span></div>';
   body+='</div>';
   if(r.temas){body+='<h2>Minuta</h2><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;background:#f9fafb;border-radius:6px;padding:10px 12px;">'+r.temas+'</div>';}
@@ -3109,6 +3128,24 @@ function renderProyExpand(pid,filtroVId){
     }
     h+='</div></div>';
   }
+
+  // Reuniones vinculadas
+  var reunsP=rByProy(pid);
+  h+='<div style="border-top:0.5px solid var(--border);margin-top:14px;padding-top:12px;">';
+  h+='<div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Reuniones ('+reunsP.length+')</div>';
+  if(!reunsP.length){
+    h+='<div style="font-size:13px;color:var(--text-2);">Sin reuniones vinculadas todavía.</div>';
+  } else {
+    for(var rpi=0;rpi<reunsP.length;rpi++){
+      var rp=reunsP[rpi];var rpts=tByR(rp.id);var rps=stats(rpts);
+      h+='<div class="ri" data-rid="'+rp.id+'" style="margin-bottom:8px;">';
+      h+='<div class="ri-d">'+fmtDF(rp.fecha)+'</div>';
+      h+='<div class="ri-t">'+rp.titulo+'</div>';
+      h+='<div style="font-size:12px;color:var(--text-2);">'+rpts.length+' tareas · '+rps.done+' completadas</div>';
+      h+='</div>';
+    }
+  }
+  h+='</div>';
 
   return h;
 }
@@ -4204,13 +4241,14 @@ function renderAndRestore(){
 }
 
 // REUNION MODAL
-function openReunionModal(rid,preCliId){
+function openReunionModal(rid,preCliId,preProyId){
   editReunionId=rid;
   var r=rid?gR(rid):null;
   document.getElementById('ov-r-titulo').textContent=r?'Editar reunion':'Nueva reunion';
   document.getElementById('rn-titulo').value=r?r.titulo:'';
   document.getElementById('rn-fecha').value=r?r.fecha:today();
   document.getElementById('rn-cli').innerHTML=mkCliOpts(r?r.cliId||'':(preCliId||''));
+  document.getElementById('rn-proy').innerHTML=mkProyOpts(r?r.pId||'':(preProyId||''));
   document.getElementById('rn-temas').value=r?r.temas:'';
   document.getElementById('rn-tareas').innerHTML='';
   // Adjuntos
@@ -4348,13 +4386,14 @@ function saveReunion(){
   var fecha=document.getElementById('rn-fecha').value;
   var temas=document.getElementById('rn-temas').value.trim();
   var cliId=document.getElementById('rn-cli').value;
+  var pIdReunion=document.getElementById('rn-proy').value;
   var partic=[];
   var cbs=document.querySelectorAll('#rn-partic input[type=checkbox]:checked');
   for(var i=0;i<cbs.length;i++)partic.push(cbs[i].value);
   var divs=document.querySelectorAll('#rn-tareas .tf');
   if(editReunionId){
     var r=gR(editReunionId);
-    r.titulo=titulo;r.fecha=fecha;r.temas=temas;r.participantes=partic;r.cliId=cliId;r.adjuntos=openReunionModal._adjuntos||[];
+    r.titulo=titulo;r.fecha=fecha;r.temas=temas;r.participantes=partic;r.cliId=cliId;r.pId=pIdReunion;r.adjuntos=openReunionModal._adjuntos||[];
     for(var j=0;j<divs.length;j++){
       var div=divs[j];
       var tit=div.querySelector('.tf-tit').value.trim();if(!tit)continue;
@@ -4400,7 +4439,7 @@ function saveReunion(){
       st.tareas.push({id:nIdd,tit:titt,rId:rId,vIds:vIdds,vence:vencee,est:'pendiente',motivo:'',notas:'',cliId:cliId,pId:tPIdN,fase:tFaseValN});
       if(tPIdN){var pjnn=gP(tPIdN);if(pjnn){pjnn.tIds=pjnn.tIds||[];pjnn.tIds.push(nIdd);}}
     }
-    st.reuniones.push({id:rId,titulo:titulo,fecha:fecha,temas:temas,participantes:partic,cliId:cliId,novedades:[],adjuntos:openReunionModal._adjuntos||[],tIds:tIds});
+    st.reuniones.push({id:rId,titulo:titulo,fecha:fecha,temas:temas,participantes:partic,cliId:cliId,pId:pIdReunion,novedades:[],adjuntos:openReunionModal._adjuntos||[],tIds:tIds});
   }
   saveSt();closeOv('ov-reunion');closeOv('ov-detalle');render(curView);
 }
@@ -4416,7 +4455,8 @@ function openDetalle(rid){
   var parts='';
   for(var i=0;i<r.participantes.length;i++)parts+=mkAv(gV(r.participantes[i]),false)+' ';
   var cliNom=r.cliId&&gC(r.cliId)?'<strong>'+gC(r.cliId).nombre+'</strong> &middot; ':'';
-  h+='<div style="font-size:12px;color:var(--text-2);margin-bottom:14px;">'+fmtDF(r.fecha)+' &middot; '+cliNom+parts+'</div>';
+  var proyNomDet=r.pId&&gP(r.pId)?'📁 '+gP(r.pId).nombre+' &middot; ':'';
+  h+='<div style="font-size:12px;color:var(--text-2);margin-bottom:14px;">'+fmtDF(r.fecha)+' &middot; '+cliNom+proyNomDet+parts+'</div>';
   // Adjuntos
   var adjs=r.adjuntos||[];
   if(adjs.length){
@@ -5041,6 +5081,11 @@ function bindProyExpandHandlers(div, pid){
   // botón ver/ocultar completadas
   var btnComp2=div.querySelector('#pdet-btn-comp-'+pid);
   if(btnComp2){(function(p,d){btnComp2.addEventListener('click',function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;d.innerHTML=renderProyExpand(p);bindProyExpandHandlers(d,p);});})(pid,div);}
+  // bindear reuniones vinculadas
+  var rEls2=div.querySelectorAll('[data-rid]');
+  for(var rei=0;rei<rEls2.length;rei++){
+    (function(rel){rel.addEventListener('click',function(ev){ev.stopPropagation();openDetalle(rel.dataset.rid);});})(rEls2[rei]);
+  }
   bindProyNov(div,pid);
 }
 </script>
