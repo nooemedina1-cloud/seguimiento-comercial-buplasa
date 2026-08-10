@@ -4342,32 +4342,73 @@ function addTFRow(t){
   var proyRow=document.createElement('div');proyRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;';
   var proySelect=document.createElement('select');proySelect.className='tf-proy';proySelect.style.cssText=ss2;
   var pBlank=document.createElement('option');pBlank.value='';pBlank.textContent='— Proyecto (opcional) —';proySelect.appendChild(pBlank);
-  for(var pi=0;pi<st.proyectos.length;pi++){
-    var pj=st.proyectos[pi];
-    var pop=document.createElement('option');pop.value=pj.id;pop.textContent=pj.nombre;
-    if(t&&t.pId===pj.id)pop.selected=true;
-    proySelect.appendChild(pop);
+  function fillProyOpts(selId){
+    var cur=proySelect.querySelectorAll('option[data-dyn]');
+    for(var ci4=0;ci4<cur.length;ci4++)cur[ci4].remove();
+    for(var pi=0;pi<st.proyectos.length;pi++){
+      var pj=st.proyectos[pi];
+      var pop=document.createElement('option');pop.value=pj.id;pop.textContent=pj.nombre;pop.dataset.dyn='1';
+      if(selId&&selId===pj.id)pop.selected=true;
+      proySelect.appendChild(pop);
+    }
+    var pNew=document.createElement('option');pNew.value='__new_proy__';pNew.textContent='+ Crear proyecto nuevo...';pNew.dataset.dyn='1';
+    proySelect.appendChild(pNew);
   }
+  fillProyOpts(t?t.pId:'');
   var faseSelect=document.createElement('select');faseSelect.className='tf-fase';faseSelect.style.cssText=ss2;
   var fBlank=document.createElement('option');fBlank.value='';fBlank.textContent='— Fase (opcional) —';faseSelect.appendChild(fBlank);
   function loadFases(pid,selFase){
     faseSelect.innerHTML='';faseSelect.appendChild(fBlank.cloneNode(true));
-    if(!pid)return;
-    var pjf=gP(pid);if(!pjf)return;
     var fasesSet={};
-    (pjf.clientes||[]).forEach(function(cl){if(cl.fase)fasesSet[cl.fase]=true;});
-    tByP(pid).forEach(function(tt){if(tt.fase)fasesSet[tt.fase]=true;});
+    if(pid){
+      var pjf=gP(pid);
+      if(pjf){
+        (pjf.clientes||[]).forEach(function(cl){if(cl.fase)fasesSet[cl.fase]=true;});
+        tByP(pid).forEach(function(tt){if(tt.fase)fasesSet[tt.fase]=true;});
+      }
+    }
     Object.keys(fasesSet).forEach(function(f){
       var fop=document.createElement('option');fop.value=f;fop.textContent=f;
       if(selFase&&selFase===f)fop.selected=true;
       faseSelect.appendChild(fop);
     });
+    var fNew=document.createElement('option');fNew.value='__new_fase__';fNew.textContent='+ Crear fase nueva...';faseSelect.appendChild(fNew);
   }
   loadFases(t?t.pId:'', t?t.fase:'');
-  proySelect.addEventListener('change',function(){loadFases(proySelect.value,'');});
+  proySelect.addEventListener('change',function(){
+    if(proySelect.value==='__new_proy__'){
+      var nombreP=prompt('Nombre del proyecto nuevo:');
+      if(nombreP&&nombreP.trim()){
+        var nIdP='pj'+Date.now()+Math.floor(Math.random()*999);
+        st.proyectos.push({id:nIdP,nombre:nombreP.trim(),desc:'',respId:'',inicio:today(),resultado:'',tipo:'desarrollo',clientes:[],fases:[],novedades:[],tIds:[]});
+        saveSt();
+        fillProyOpts(nIdP);
+        loadFases(nIdP,'');
+      } else {
+        proySelect.value='';
+        loadFases('','');
+      }
+    } else {
+      loadFases(proySelect.value,'');
+    }
+  });
+  faseSelect.addEventListener('change',function(){
+    if(faseSelect.value==='__new_fase__'){
+      var nombreF=prompt('Nombre de la fase/hito nueva:');
+      if(nombreF&&nombreF.trim()){
+        var fop2=document.createElement('option');fop2.value=nombreF.trim();fop2.textContent=nombreF.trim();fop2.selected=true;
+        faseSelect.insertBefore(fop2,faseSelect.lastElementChild);
+      } else {
+        faseSelect.value='';
+      }
+    }
+  });
   proyRow.appendChild(proySelect);proyRow.appendChild(faseSelect);
 
-  div.appendChild(hdr);div.appendChild(titIn);div.appendChild(respDiv);div.appendChild(datIn);div.appendChild(proyRow);
+  var cliSelect=document.createElement('select');cliSelect.className='tf-cli';cliSelect.style.cssText=ss2;
+  cliSelect.innerHTML=mkCliOpts(t?t.cliId||'':'');
+
+  div.appendChild(hdr);div.appendChild(titIn);div.appendChild(respDiv);div.appendChild(datIn);div.appendChild(proyRow);div.appendChild(cliSelect);
   if(t){
     var estSel=document.createElement('select');estSel.className='tf-est';
     estSel.style.cssText='width:100%;border:0.5px solid var(--border-md);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;margin-bottom:4px;';
@@ -4403,6 +4444,7 @@ function saveReunion(){
       var tid=div.dataset.tid;
       var tProy=div.querySelector('.tf-proy');var tFase=div.querySelector('.tf-fase');
       var tPId=tProy?tProy.value:'';var tFaseVal=tFase?tFase.value:'';
+      var tCliEl=div.querySelector('.tf-cli');var tCliVal=tCliEl?tCliEl.value:'';
       if(tid){
         for(var k=0;k<st.tareas.length;k++){
           if(st.tareas[k].id===tid){
@@ -4410,7 +4452,8 @@ function saveReunion(){
             if(estEl)st.tareas[k].est=estEl.value;
             if(tPId)st.tareas[k].pId=tPId;
             if(tFaseVal)st.tareas[k].fase=tFaseVal;
-            if(cliId&&!st.tareas[k].cliId)st.tareas[k].cliId=cliId;
+            if(tCliVal)st.tareas[k].cliId=tCliVal;
+            else if(cliId&&!st.tareas[k].cliId)st.tareas[k].cliId=cliId;
             // Agregar tarea al proyecto si no está
             if(tPId){var pjt=gP(tPId);if(pjt&&(pjt.tIds||[]).indexOf(tid)<0){pjt.tIds=pjt.tIds||[];pjt.tIds.push(tid);}}
             break;
@@ -4419,7 +4462,7 @@ function saveReunion(){
       } else {
         var nId='t'+Date.now()+Math.floor(Math.random()*1000);
         r.tIds.push(nId);
-        var newT={id:nId,tit:tit,rId:editReunionId,vIds:vIds,vence:vence,est:'pendiente',motivo:'',notas:'',cliId:cliId,pId:tPId,fase:tFaseVal};
+        var newT={id:nId,tit:tit,rId:editReunionId,vIds:vIds,vence:vence,est:'pendiente',motivo:'',notas:'',cliId:tCliVal||cliId,pId:tPId,fase:tFaseVal};
         st.tareas.push(newT);
         if(tPId){var pjn=gP(tPId);if(pjn){pjn.tIds=pjn.tIds||[];pjn.tIds.push(nId);}}
       }
@@ -4434,9 +4477,10 @@ function saveReunion(){
       var vencee=divv.querySelector('.tf-fecha').value;
       var tProyN=divv.querySelector('.tf-proy');var tFaseN=divv.querySelector('.tf-fase');
       var tPIdN=tProyN?tProyN.value:'';var tFaseValN=tFaseN?tFaseN.value:'';
+      var tCliElN=divv.querySelector('.tf-cli');var tCliValN=tCliElN?tCliElN.value:'';
       var nIdd='t'+Date.now()+Math.floor(Math.random()*9999);
       tIds.push(nIdd);
-      st.tareas.push({id:nIdd,tit:titt,rId:rId,vIds:vIdds,vence:vencee,est:'pendiente',motivo:'',notas:'',cliId:cliId,pId:tPIdN,fase:tFaseValN});
+      st.tareas.push({id:nIdd,tit:titt,rId:rId,vIds:vIdds,vence:vencee,est:'pendiente',motivo:'',notas:'',cliId:tCliValN||cliId,pId:tPIdN,fase:tFaseValN});
       if(tPIdN){var pjnn=gP(tPIdN);if(pjnn){pjnn.tIds=pjnn.tIds||[];pjnn.tIds.push(nIdd);}}
     }
     st.reuniones.push({id:rId,titulo:titulo,fecha:fecha,temas:temas,participantes:partic,cliId:cliId,pId:pIdReunion,novedades:[],adjuntos:openReunionModal._adjuntos||[],tIds:tIds});
