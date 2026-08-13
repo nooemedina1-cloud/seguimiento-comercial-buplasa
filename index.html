@@ -369,16 +369,20 @@ select:focus,input:focus{border-color:var(--primary);}
     <div class="mh"><h2 id="ov-p-titulo">Nuevo proyecto</h2><button class="xb" id="ov-p-x">x</button></div>
     <div class="mb">
       <div class="fg">
-        <label>Tipo de proyecto</label>
-        <div style="display:flex;gap:8px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;border:1px solid var(--border-md);border-radius:var(--r);padding:10px 12px;" id="pj-tipo-dev-lbl">
-            <input type="radio" name="pj-tipo" id="pj-tipo-dev" value="desarrollo" style="width:14px;height:14px;">
-            <div><div style="font-size:13px;font-weight:500;">📌 Desarrollo</div><div style="font-size:11px;color:var(--text-2);">Fases e hitos, clientes opcionales</div></div>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;border:1px solid var(--border-md);border-radius:var(--r);padding:10px 12px;" id="pj-tipo-com-lbl">
-            <input type="radio" name="pj-tipo" id="pj-tipo-com" value="comercial" style="width:14px;height:14px;">
-            <div><div style="font-size:13px;font-weight:500;">👥 Comercial</div><div style="font-size:11px;color:var(--text-2);">Clientes con estado, valor y probabilidad</div></div>
-          </label>
+        <label>Categoría</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:140px;border:1px solid var(--border-md);border-radius:var(--r);padding:10px 12px;" id="pj-cat-proyecto-lbl" data-pjcat="proyecto">
+            <input type="radio" name="pj-tipo" id="pj-tipo-dev" value="desarrollo" style="width:14px;height:14px;pointer-events:none;">
+            <div><div style="font-size:13px;font-weight:500;">📁 Proyecto</div><div style="font-size:11px;color:var(--text-2);">Fases e hitos, tiene un final</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:140px;border:1px solid var(--border-md);border-radius:var(--r);padding:10px 12px;" id="pj-cat-cuenta-lbl" data-pjcat="cuenta">
+            <input type="radio" name="pj-tipo" id="pj-tipo-com" value="comercial" style="width:14px;height:14px;pointer-events:none;">
+            <div><div style="font-size:13px;font-weight:500;">💼 Cuenta / Seguimiento</div><div style="font-size:11px;color:var(--text-2);">Clientes con estado, valor y prob., sin final</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:140px;border:1px solid var(--border-md);border-radius:var(--r);padding:10px 12px;" id="pj-cat-minuta-lbl" data-pjcat="minuta">
+            <input type="radio" name="pj-tipo-visual-minuta" id="pj-tipo-min-visual" style="width:14px;height:14px;pointer-events:none;">
+            <div><div style="font-size:13px;font-weight:500;">📝 Minuta</div><div style="font-size:11px;color:var(--text-2);">Reuniones recurrentes por cliente</div></div>
+          </div>
         </div>
       </div>
       <div class="fg" id="pj-plantilla-wrap">
@@ -496,30 +500,32 @@ function loadSt(){
       var t=d.tareas[i];
       if(!t.vIds){t.vIds=t.vId?[t.vId]:[];delete t.vId;}
     }
+    // Mapas de apoyo para las migraciones (evita escaneos anidados O(n²))
+    var _mReunById={};for(var ri0=0;ri0<d.reuniones.length;ri0++)_mReunById[d.reuniones[ri0].id]=d.reuniones[ri0];
+    var _mCliById={};for(var ci0=0;ci0<d.clientes.length;ci0++)_mCliById[d.clientes[ci0].id]=d.clientes[ci0];
     // Migración: heredar cliId de la reunión en tareas que no lo tengan
     for(var mri=0;mri<d.tareas.length;mri++){
       var mrt=d.tareas[mri];
       if(mrt.cliId)continue;
       if(!mrt.rId)continue;
-      var mrR=null;
-      for(var mrj=0;mrj<d.reuniones.length;mrj++){if(d.reuniones[mrj].id===mrt.rId){mrR=d.reuniones[mrj];break;}}
+      var mrR=_mReunById[mrt.rId];
       if(mrR&&mrR.cliId)mrt.cliId=mrR.cliId;
     }
     // Migración: vincular tareas huérfanas a proyectos por nombre de cliente
     for(var mi=0;mi<d.proyectos.length;mi++){
       var mp=d.proyectos[mi];
       if(!mp.tIds)mp.tIds=[];
-      var mcliNames=(mp.clientes||[]).map(function(c){return c.nombre;});
+      var mcliNamesSet={};(mp.clientes||[]).forEach(function(c){mcliNamesSet[c.nombre]=true;});
+      var mtIdsSet={};mp.tIds.forEach(function(tid){mtIdsSet[tid]=true;});
       for(var mj=0;mj<d.tareas.length;mj++){
         var mt=d.tareas[mj];
-        if(mp.tIds.indexOf(mt.id)>=0)continue; // ya vinculada
+        if(mtIdsSet[mt.id])continue; // ya vinculada
         if(mt.pId&&mt.pId!==mp.id)continue; // vinculada a otro proyecto
         if(!mt.cliId)continue;
-        // buscar el cliente de la tarea
-        var mc=null;
-        for(var mk=0;mk<d.clientes.length;mk++){if(d.clientes[mk].id===mt.cliId){mc=d.clientes[mk];break;}}
-        if(mc&&mcliNames.indexOf(mc.nombre)>=0){
+        var mc=_mCliById[mt.cliId];
+        if(mc&&mcliNamesSet[mc.nombre]){
           mp.tIds.push(mt.id);
+          mtIdsSet[mt.id]=true;
           mt.pId=mp.id;
         }
       }
@@ -527,9 +533,29 @@ function loadSt(){
     return d;
   }catch(e){return JSON.parse(JSON.stringify(SEED));}
 }
+var _idxCli={};
+var _idxVen={};
+var _idxProy={};
+var _idxProyByTarea={};
+function buildIndexes(){
+  _idxCli={};_idxVen={};_idxProy={};_idxProyByTarea={};
+  for(var i=0;i<st.clientes.length;i++)_idxCli[st.clientes[i].id]=st.clientes[i];
+  for(var j=0;j<st.vendedores.length;j++)_idxVen[st.vendedores[j].id]=st.vendedores[j];
+  for(var k=0;k<st.proyectos.length;k++){
+    var pk=st.proyectos[k];
+    _idxProy[pk.id]=pk;
+    var tids=pk.tIds||[];
+    for(var ti0=0;ti0<tids.length;ti0++)_idxProyByTarea[tids[ti0]]=pk;
+  }
+  for(var t2=0;t2<st.tareas.length;t2++){
+    var tt=st.tareas[t2];
+    if(tt.pId&&!_idxProyByTarea[tt.id]&&_idxProy[tt.pId])_idxProyByTarea[tt.id]=_idxProy[tt.pId];
+  }
+}
 function saveSt(){
   try{
     localStorage.setItem('bup3',JSON.stringify(st));
+    buildIndexes();
   } catch(e){
     if(e.name==='QuotaExceededError'||e.code===22){
       alert('⚠️ No se pudo guardar: el almacenamiento local está lleno.');
@@ -559,6 +585,7 @@ function cargarRemoto(cb){
 }
 
 var st=loadSt();
+buildIndexes();
 var curView='dashboard';
 var vistaSoloVendedorId=null;
 var _lastOpenCid=null;   // cliente expandido
@@ -577,7 +604,9 @@ var cliEstFiltro='';
 var cliTipoFiltro='';
 
 function gV(id){
-  for(var i=0;i<st.vendedores.length;i++){if(st.vendedores[i].id===id)return st.vendedores[i];}
+  var hit=_idxVen[id];
+  if(hit)return hit;
+  for(var i=0;i<st.vendedores.length;i++){if(st.vendedores[i].id===id){_idxVen[id]=st.vendedores[i];return st.vendedores[i];}}
   return {id:'?',nombre:'?'};
 }
 function gVi(id){
@@ -589,21 +618,25 @@ function gR(id){
   return null;
 }
 function gP(id){
-  for(var i=0;i<st.proyectos.length;i++){if(st.proyectos[i].id===id)return st.proyectos[i];}
+  var hit=_idxProy[id];
+  if(hit)return hit;
+  for(var i=0;i<st.proyectos.length;i++){if(st.proyectos[i].id===id){_idxProy[id]=st.proyectos[i];return st.proyectos[i];}}
   return null;
 }
 function gPbyTarea(tid){
+  var hit=_idxProyByTarea[tid];
+  if(hit)return hit;
   var result=[];
   // 1. Por tIds del proyecto
   for(var i=0;i<st.proyectos.length;i++){
     if((st.proyectos[i].tIds||[]).indexOf(tid)>=0)result.push(st.proyectos[i]);
   }
-  if(result.length)return result[0];
+  if(result.length){_idxProyByTarea[tid]=result[0];return result[0];}
   // 2. Por t.pId
   var t=null;
   for(var j=0;j<st.tareas.length;j++){if(st.tareas[j].id===tid){t=st.tareas[j];break;}}
   if(!t)return null;
-  if(t.pId){for(var k=0;k<st.proyectos.length;k++){if(st.proyectos[k].id===t.pId)return st.proyectos[k];}}
+  if(t.pId){for(var k=0;k<st.proyectos.length;k++){if(st.proyectos[k].id===t.pId){_idxProyByTarea[tid]=st.proyectos[k];return st.proyectos[k];}}}
   // 3. Por cliId: buscar el nombre del cliente y comparar contra p.clientes[].nombre
   if(t.cliId){
     var cNom='';
@@ -612,7 +645,7 @@ function gPbyTarea(tid){
       for(var pi=0;pi<st.proyectos.length;pi++){
         var pclis=st.proyectos[pi].clientes||[];
         for(var pci=0;pci<pclis.length;pci++){
-          if(pclis[pci].nombre===cNom)return st.proyectos[pi];
+          if(pclis[pci].nombre===cNom){_idxProyByTarea[tid]=st.proyectos[pi];return st.proyectos[pi];}
         }
       }
     }
@@ -620,7 +653,9 @@ function gPbyTarea(tid){
   return null;
 }
 function gC(id){
-  for(var i=0;i<st.clientes.length;i++){if(st.clientes[i].id===id)return st.clientes[i];}
+  var hit=_idxCli[id];
+  if(hit)return hit;
+  for(var i=0;i<st.clientes.length;i++){if(st.clientes[i].id===id){_idxCli[id]=st.clientes[i];return st.clientes[i];}}
   return null;
 }
 function mkCliAvs(vIds){
@@ -1384,10 +1419,37 @@ var tareaVistaModo='lista';
 var verCompletadas=false;
 var verProyArchivados=false;
 var cliProyFiltroMap={};
+function pCategoria(p){
+  return p.categoria||(p.tipo==='comercial'?'cuenta':'proyecto');
+}
+var CATEGORIA_LBL={proyecto:'📁 Proyecto',cuenta:'💼 Cuenta',minuta:'📝 Minuta'};
 function esProyCerradoEfectivo(p){
   if(p.resultado)return p.resultado==='cerrado'||p.resultado==='cancelado'||p.resultado==='postergado';
   var pts=tByP(p.id);
   return pts.length>0&&stats(pts).pct===100;
+}
+// Busca el registro de ESTE cliente dentro de "Propuestas/Clientes" de un proyecto (ahí es donde Noe marca el resultado real)
+function gCliEnProy(p,cid,cNombre){
+  var pclis=p.clientes||[];
+  for(var i=0;i<pclis.length;i++){if(pclis[i]._cid===cid||pclis[i].nombre===cNombre)return pclis[i];}
+  return null;
+}
+// Resultado efectivo de UN cliente dentro de UN proyecto puntual (no del proyecto entero)
+function resultadoCliEnProy(c,p){
+  var clEntry=gCliEnProy(p,c.id,c.nombre);
+  if(clEntry&&clEntry.resultado)return clEntry.resultado;
+  return '';
+}
+function esCerradoParaCliente(c,p){
+  var res=resultadoCliEnProy(c,p);
+  if(res)return res==='cerrado'||res==='cancelado'||res==='postergado';
+  // Sin registro de estado: mirar si TODAS las tareas de este cliente en este proyecto están completadas
+  var pts=tByP(p.id).filter(function(t){
+    if(t.cliId===c.id)return true;
+    if(t.cliId){var tc=gC(t.cliId);if(tc&&tc.nombre===c.nombre)return true;}
+    return false;
+  });
+  return pts.length>0&&pts.every(function(t){return t.est==='completada';});
 }
 function renderActividad(){
   var h='';
@@ -2447,7 +2509,7 @@ function renderListaCli(){
     h+='</div>';
     // Chips de proyectos (expanden en el lugar, como las fases/clientes en Proyectos)
     if(proys.length){
-      var proysCerr=proys.filter(function(pp){return esProyCerradoEfectivo(pp);});
+      var proysCerr=proys.filter(function(pp){return esCerradoParaCliente(c,pp);});
       var proysAct2=proys.filter(function(pp){return proysCerr.indexOf(pp)<0;});
       var filtroCli=cliProyFiltroMap[c.id]||'activos';
       var proysShow=filtroCli==='cerrados'?proysCerr:(filtroCli==='todos'?proys:proysAct2);
@@ -2462,10 +2524,10 @@ function renderListaCli(){
       if(!proysShow.length)h+='<span style="font-size:12px;color:var(--text-2);">Sin proyectos en este filtro.</span>';
       for(var pci=0;pci<proysShow.length;pci++){
         var pchip=proysShow[pci];
-        var pchipTs=tByP(pchip.id);var pchipStats=stats(pchipTs);
+        var resCli=resultadoCliEnProy(c,pchip);
         var estBadge='';
-        if(pchip.resultado)estBadge='<span style="margin-left:3px;display:inline-block;">'+mkResultadoBadge(pchip.resultado)+'</span>';
-        else if(pchipTs.length&&pchipStats.pct===100)estBadge='<span class="badge" style="background:#EAF3DE;color:#3B6D11;margin-left:3px;">✓ 100%</span>';
+        if(resCli)estBadge='<span style="margin-left:3px;display:inline-block;">'+mkResultadoBadge(resCli)+'</span>';
+        else if(esCerradoParaCliente(c,pchip))estBadge='<span class="badge" style="background:#EAF3DE;color:#3B6D11;margin-left:3px;">✓ 100%</span>';
         h+='<span class="cliproy-jump-chip" data-jumppid="'+pchip.id+'" data-cid="'+c.id+'" style="font-size:11px;background:var(--bg);border:1px solid var(--border-md);color:var(--text-2);border-radius:20px;padding:3px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">📁 '+pchip.nombre+estBadge+'<span class="chip-arrow" style="font-size:10px;">▶</span></span>';
       }
       h+='</div>';
@@ -3321,20 +3383,30 @@ function renderProyExpand(pid,filtroVId){
 }
 
 var proyEstadoFiltro='activos';
+var proyCategoriaFiltro='';
 function renderProyectos(){
   var h='';
   h+='<div class="sh"><h2>Proyectos ('+st.proyectos.length+')</h2><div style="display:flex;gap:6px;"><button class="btn btn-sm" id="btn-exp-proy">↓ Exportar</button><button class="btn btn-p" id="btn-nuevo-proy">+ Nuevo proyecto</button></div></div>';
   if(!st.proyectos.length){
     h+='<div class="empty">No hay proyectos todavía.</div>';
   } else {
-    var proyCerr2=st.proyectos.filter(function(pp){return esProyCerradoEfectivo(pp);});
-    var proyAct3=st.proyectos.filter(function(pp){return proyCerr2.indexOf(pp)<0;});
+    var cntCat={proyecto:0,cuenta:0,minuta:0};
+    st.proyectos.forEach(function(pp){cntCat[pCategoria(pp)]=(cntCat[pCategoria(pp)]||0)+1;});
+    h+='<div class="filters" style="margin-bottom:8px;">';
+    h+='<button class="btn btn-sm'+(proyCategoriaFiltro===''?' btn-p':'')+'" data-proycatfilt="">Todas ('+st.proyectos.length+')</button>';
+    h+='<button class="btn btn-sm'+(proyCategoriaFiltro==='proyecto'?' btn-p':'')+'" data-proycatfilt="proyecto">📁 Proyectos ('+(cntCat.proyecto||0)+')</button>';
+    h+='<button class="btn btn-sm'+(proyCategoriaFiltro==='cuenta'?' btn-p':'')+'" data-proycatfilt="cuenta">💼 Cuentas ('+(cntCat.cuenta||0)+')</button>';
+    if(cntCat.minuta)h+='<button class="btn btn-sm'+(proyCategoriaFiltro==='minuta'?' btn-p':'')+'" data-proycatfilt="minuta">📝 Minutas ('+cntCat.minuta+')</button>';
+    h+='</div>';
+    var proyectosCat=proyCategoriaFiltro?st.proyectos.filter(function(pp){return pCategoria(pp)===proyCategoriaFiltro;}):st.proyectos;
+    var proyCerr2=proyectosCat.filter(function(pp){return esProyCerradoEfectivo(pp);});
+    var proyAct3=proyectosCat.filter(function(pp){return proyCerr2.indexOf(pp)<0;});
     h+='<div class="filters" style="margin-bottom:14px;">';
     h+='<button class="btn btn-sm'+(proyEstadoFiltro==='activos'?' btn-p':'')+'" data-proyestfilt="activos">Activos ('+proyAct3.length+')</button>';
     h+='<button class="btn btn-sm'+(proyEstadoFiltro==='cerrados'?' btn-p':'')+'" data-proyestfilt="cerrados">Cerrados ('+proyCerr2.length+')</button>';
-    h+='<button class="btn btn-sm'+(proyEstadoFiltro==='todos'?' btn-p':'')+'" data-proyestfilt="todos">Todos ('+st.proyectos.length+')</button>';
+    h+='<button class="btn btn-sm'+(proyEstadoFiltro==='todos'?' btn-p':'')+'" data-proyestfilt="todos">Todos ('+proyectosCat.length+')</button>';
     h+='</div>';
-    var proysList=proyEstadoFiltro==='cerrados'?proyCerr2:(proyEstadoFiltro==='todos'?st.proyectos:proyAct3);
+    var proysList=proyEstadoFiltro==='cerrados'?proyCerr2:(proyEstadoFiltro==='todos'?proyectosCat:proyAct3);
     if(!proysList.length)h+='<div class="empty">No hay proyectos en este filtro.</div>';
     for(var i=0;i<proysList.length;i++){
       var p=proysList[i];
@@ -3388,7 +3460,10 @@ function renderProyectos(){
       h+='<div data-prid="'+p.id+'" style="cursor:pointer;">';
       // Fila 1: nombre | estados + cumplimiento
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">';
+      h+='<div style="display:flex;align-items:center;gap:6px;min-width:0;">';
+      h+='<span style="font-size:11px;color:var(--text-2);flex-shrink:0;">'+CATEGORIA_LBL[pCategoria(p)]+'</span>';
       h+='<span style="font-size:15px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.nombre+'</span>';
+      h+='</div>';
       h+='<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">'+estadoBadges+'<span style="font-size:13px;font-weight:600;color:'+pctColor2+';">'+st2.pct+'%</span></div>';
       h+='</div>';
       // Fila 2: responsable · clientes · tareas · valor
@@ -3418,6 +3493,10 @@ function renderProyectos(){
   var pebtns=document.querySelectorAll('[data-proyestfilt]');
   for(var pebi=0;pebi<pebtns.length;pebi++){
     (function(btn){btn.addEventListener('click',function(){proyEstadoFiltro=btn.dataset.proyestfilt;renderProyectos();});})(pebtns[pebi]);
+  }
+  var pcbtns=document.querySelectorAll('[data-proycatfilt]');
+  for(var pcbi=0;pcbi<pcbtns.length;pcbi++){
+    (function(btn){btn.addEventListener('click',function(){proyCategoriaFiltro=btn.dataset.proycatfilt;renderProyectos();});})(pcbtns[pcbi]);
   }
 
   // Chips expandibles
@@ -3527,6 +3606,19 @@ var PROYECTO_PLANTILLAS={
   lanzamiento:['Desarrollo y diseño','Prueba de color / prototipo','Presentación a clientes','Seguimiento de ventas'],
   estacional:['Día del padre','Día de la madre','Día del niño','Navidad']
 };
+var _pjCategoriaActual='proyecto';
+function setPjCategoriaVisual(cat){
+  _pjCategoriaActual=cat;
+  document.getElementById('pj-tipo-dev').checked=(cat==='proyecto');
+  document.getElementById('pj-tipo-com').checked=(cat==='cuenta');
+  var elMinRadio=document.getElementById('pj-tipo-min-visual');if(elMinRadio)elMinRadio.checked=(cat==='minuta');
+  var boxes={proyecto:'pj-cat-proyecto-lbl',cuenta:'pj-cat-cuenta-lbl',minuta:'pj-cat-minuta-lbl'};
+  Object.keys(boxes).forEach(function(k){
+    var el=document.getElementById(boxes[k]);
+    if(el)el.style.borderColor=(k===cat)?'var(--primary)':'var(--border-md)';
+  });
+  document.getElementById('btn-add-pcli').textContent=(cat==='proyecto')?'+ Agregar fase / hito':'+ Agregar cliente';
+}
 function openProyectoModal(pid){
   editProyectoId=pid;
   _lastPjTareaVIds=[];
@@ -3541,11 +3633,7 @@ function openProyectoModal(pid){
   plantSel.onchange=function(){
     var key=plantSel.value;
     if(!key)return;
-    document.getElementById('pj-tipo-dev').checked=true;
-    document.getElementById('pj-tipo-com').checked=false;
-    document.getElementById('pj-tipo-dev-lbl').style.borderColor='var(--primary)';
-    document.getElementById('pj-tipo-com-lbl').style.borderColor='var(--border-md)';
-    document.getElementById('btn-add-pcli').textContent='+ Agregar fase / hito';
+    setPjCategoriaVisual('proyecto');
     var cDiv2=document.getElementById('pj-clientes');cDiv2.innerHTML='';
     var fases=PROYECTO_PLANTILLAS[key]||[];
     for(var fi2=0;fi2<fases.length;fi2++)addFaseBlock(fases[fi2],[],[]);
@@ -3555,13 +3643,10 @@ function openProyectoModal(pid){
   document.getElementById('pj-resp').innerHTML=mkVOpts(p?p.respId:'');
   document.getElementById('pj-inicio').value=p?p.inicio||'':(today());
   document.getElementById('pj-resultado').value=p?p.resultado||'':'';
-  // Tipo de proyecto
+  // Categoría de proyecto
   var tipo=p?p.tipo||'desarrollo':'desarrollo';
-  document.getElementById('pj-tipo-dev').checked=(tipo==='desarrollo');
-  document.getElementById('pj-tipo-com').checked=(tipo==='comercial');
-  document.getElementById('pj-tipo-dev-lbl').style.borderColor=tipo==='desarrollo'?'var(--primary)':'var(--border-md)';
-  document.getElementById('pj-tipo-com-lbl').style.borderColor=tipo==='comercial'?'var(--primary)':'var(--border-md)';
-  document.getElementById('btn-add-pcli').textContent=tipo==='comercial'?'+ Agregar cliente':'+ Agregar fase / hito';
+  var catInicial=p?(p.categoria||(tipo==='comercial'?'cuenta':'proyecto')):'proyecto';
+  setPjCategoriaVisual(catInicial);
   var cDiv=document.getElementById('pj-clientes');cDiv.innerHTML='';
   var clis=p?p.clientes:[];
   if(tipo==='comercial'){
@@ -3990,7 +4075,8 @@ function saveProyecto(){
   var respId=document.getElementById('pj-resp').value;
   var inicio=document.getElementById('pj-inicio')?document.getElementById('pj-inicio').value:'';
   var resultado=document.getElementById('pj-resultado')?document.getElementById('pj-resultado').value:'';
-  var tipo=document.getElementById('pj-tipo-com')&&document.getElementById('pj-tipo-com').checked?'comercial':'desarrollo';
+  var tipo=_pjCategoriaActual==='proyecto'?'desarrollo':'comercial';
+  var categoria=_pjCategoriaActual||(tipo==='comercial'?'cuenta':'proyecto');
   var clis=[];
   var tareasPorCli=[];
 
@@ -4073,7 +4159,7 @@ function saveProyecto(){
 
   if(editProyectoId){
     var p=gP(editProyectoId);
-    p.nombre=nombre;p.desc=desc;p.respId=respId;p.inicio=inicio;p.resultado=resultado;p.tipo=tipo;p.clientes=clis;p.fases=fasesNombres||[];
+    p.nombre=nombre;p.desc=desc;p.respId=respId;p.inicio=inicio;p.resultado=resultado;p.tipo=tipo;p.categoria=categoria;p.clientes=clis;p.fases=fasesNombres||[];
     // IDs de tareas visibles en el modal
     var tidsEnModal=tareasPorCli.map(function(tc){return tc.tid;}).filter(Boolean);
     // Eliminar del proyecto las tareas que fueron removidas del modal
@@ -4110,7 +4196,7 @@ function saveProyecto(){
       tIds.push(nId2);
       st.tareas.push({id:nId2,tit:tc2.tit,pId:pId,rId:'',vIds:tc2.vIds,vence:tc2.vence,est:'pendiente',prioridad:tc2.prioridad||'normal',motivo:'',cliId:tc2.cliId||'',fase:tc2.fase||'',notas:'',novedades:[]});
     }
-    st.proyectos.push({id:pId,nombre:nombre,desc:desc,respId:respId,inicio:inicio,resultado:resultado,tipo:tipo,clientes:clis,fases:fasesNombres||[],novedades:[],tIds:tIds});
+    st.proyectos.push({id:pId,nombre:nombre,desc:desc,respId:respId,inicio:inicio,resultado:resultado,tipo:tipo,categoria:categoria,clientes:clis,fases:fasesNombres||[],novedades:[],tIds:tIds});
   }
   saveSt();closeOv('ov-proyecto');closeOv('ov-pdet');render(curView);
 }
@@ -4235,7 +4321,7 @@ function bindEtProyFase(){
       var nombreP=prompt('Nombre del proyecto nuevo:');
       if(nombreP&&nombreP.trim()){
         var nIdP='pj'+Date.now()+Math.floor(Math.random()*999);
-        st.proyectos.push({id:nIdP,nombre:nombreP.trim(),desc:'',respId:'',inicio:today(),resultado:'',tipo:'desarrollo',clientes:[],fases:[],novedades:[],tIds:[]});
+        st.proyectos.push({id:nIdP,nombre:nombreP.trim(),desc:'',respId:'',inicio:today(),resultado:'',tipo:'desarrollo',categoria:'proyecto',clientes:[],fases:[],novedades:[],tIds:[]});
         saveSt();
         fillEtProyOpts(nIdP);
         loadEtFases(nIdP,'');
@@ -4721,7 +4807,7 @@ function addTFRow(t){
       var nombreP=prompt('Nombre del proyecto nuevo:');
       if(nombreP&&nombreP.trim()){
         var nIdP='pj'+Date.now()+Math.floor(Math.random()*999);
-        st.proyectos.push({id:nIdP,nombre:nombreP.trim(),desc:'',respId:'',inicio:today(),resultado:'',tipo:'desarrollo',clientes:[],fases:[],novedades:[],tIds:[]});
+        st.proyectos.push({id:nIdP,nombre:nombreP.trim(),desc:'',respId:'',inicio:today(),resultado:'',tipo:'desarrollo',categoria:'proyecto',clientes:[],fases:[],novedades:[],tIds:[]});
         saveSt();
         fillProyOpts(nIdP);
         loadFases(nIdP,'');
@@ -5233,24 +5319,26 @@ document.getElementById('ov-p-x').addEventListener('click',function(){closeOv('o
 document.getElementById('ov-p-cancel').addEventListener('click',function(){closeOv('ov-proyecto');});
 document.getElementById('ov-p-save').addEventListener('click',saveProyecto);
 document.getElementById('btn-add-pcli').addEventListener('click',function(){
-  var tipo=document.getElementById('pj-tipo-com').checked?'comercial':'desarrollo';
+  var tipo=_pjCategoriaActual==='proyecto'?'desarrollo':'comercial';
   if(tipo==='comercial')addPCliRowComercial(null,[]);
   else addFaseBlock('',[]);
 });
-// Cambiar texto botón y aspecto al cambiar tipo
-document.querySelectorAll('input[name="pj-tipo"]').forEach(function(r){
-  r.addEventListener('change',function(){
-    var tipo=document.getElementById('pj-tipo-com').checked?'comercial':'desarrollo';
-    document.getElementById('btn-add-pcli').textContent=tipo==='comercial'?'+ Agregar cliente':'+ Agregar fase / hito';
-    document.getElementById('pj-tipo-dev-lbl').style.borderColor=tipo==='desarrollo'?'var(--primary)':'var(--border-md)';
-    document.getElementById('pj-tipo-com-lbl').style.borderColor=tipo==='comercial'?'var(--primary)':'var(--border-md)';
-    // Re-renderizar bloques según nuevo tipo
+// Cambiar categoría (Proyecto / Cuenta / Minuta) al hacer click en las cajas
+document.querySelectorAll('[data-pjcat]').forEach(function(box){
+  box.addEventListener('click',function(){
+    var nuevaCat=box.dataset.pjcat;
+    var catAnterior=_pjCategoriaActual;
+    var tipoAnterior=(catAnterior==='proyecto')?'desarrollo':'comercial';
+    var tipoNuevo=(nuevaCat==='proyecto')?'desarrollo':'comercial';
+    setPjCategoriaVisual(nuevaCat);
+    // Solo re-renderizar los bloques si cambia entre Proyecto y (Cuenta/Minuta) — Cuenta<->Minuta comparten la misma estructura
+    if(tipoAnterior===tipoNuevo)return;
     var pid=editProyectoId;
     var p=pid?gP(pid):null;
     var cDiv=document.getElementById('pj-clientes');cDiv.innerHTML='';
     if(!p)return;
     var clis=p.clientes||[];
-    if(tipo==='comercial'){
+    if(tipoNuevo==='comercial'){
       for(var i=0;i<clis.length;i++){
         var cl=clis[i];
         var clTareas=tByP(pid).filter(function(t){
