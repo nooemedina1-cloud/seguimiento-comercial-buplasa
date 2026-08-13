@@ -217,6 +217,10 @@ select:focus,input:focus{border-color:var(--primary);}
       <div class="fg"><label>Cliente vinculado</label><select id="et-cli" onchange="actualizarContactosCli(&#39;et-cli&#39;,&#39;et-clicontacto&#39;)"><option value="">— Sin cliente —</option><option value="c1781197122217">Ilko Task</option><option value="c1781202410029">PSA</option><option value="c1781271495054">Cook Master</option><option value="c1781625557713">Fravega</option><option value="c1781890654540">Cooperativa Obrera</option><option value="c1781890774043">La Anonima</option><option value="c1782135045759">Reteplast</option><option value="c1782135063664">Sodimac</option><option value="c1782135890075">Carrefour</option><option value="c1782481165751">Chango Mas</option><option value="c1782486255376">Quo Productos</option><option value="c1782489861532">BIASHOP</option><option value="c1782490367536">Coto</option><option value="c1782496768642">Easy</option><option value="c1782497204205">Full Regalos</option><option value="c1782501418925">Cannon</option><option value="c1782501597025">Chiaru</option><option value="c1782502248330">Buply</option><option value="c1782919018139" selected="">Jumbo</option><option value="c1782919209453">Krikos</option><option value="c1782922592325">Merchands</option><option value="c1782923062697">Supermercados Toledo</option><option value="c1782923107706">Farmacity / Simplicity</option><option value="c1782923143052">YPF</option><option value="c1782923338460">Almacor</option><option value="c1782923585908">Bidcom</option><option value="c1782930789530">Coppel</option><option value="c1783014042210">Jugueterías Cebra</option><option value="c1783014160877">Multipack</option><option value="c1783087168720">Supermercado La Gallega</option><option value="c1783101177181">Beruplast</option></select></div>
       <div class="fg"><label>Contacto</label><select id="et-clicontacto"><option value="">— Sin contacto —</option><option value="Natalia Alvite">Natalia Alvite (Compradora Contenedores)</option><option value="Victoria Deferrari">Victoria Deferrari (Compradora accesorios (de Licencia))</option><option value="Micaela Cid Rojas">Micaela Cid Rojas (Compradora Contenedores)</option><option value="Aixa Ameztoy">Aixa Ameztoy (Compradora de Blanco)</option><option value="Miriam Rinaldi">Miriam Rinaldi (Decoración Nacional)</option><option value="Camila Milagros">Camila Milagros (Asistente de Natalia y Miriam Rinaldi)</option></select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="fg"><label>Proyecto vinculado</label><select id="et-proy"></select></div>
+        <div class="fg"><label>Fase</label><select id="et-fase"></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="fg"><label>Fecha inicio</label><input type="date" id="et-inicio"></div>
         <div class="fg"><label>Prioridad</label>
           <select id="et-prioridad">
@@ -228,6 +232,14 @@ select:focus,input:focus{border-color:var(--primary);}
         </div>
       </div>
       <div class="fg"><label>Notas</label><textarea id="et-notas" placeholder="Observaciones adicionales..."></textarea></div>
+      <div class="fg" style="border-top:0.5px solid var(--border);padding-top:12px;margin-top:4px;">
+        <label style="font-size:12px;font-weight:500;color:var(--text-2);display:block;margin-bottom:6px;">Subtareas <span id="et-sub-progreso" style="font-weight:400;"></span></label>
+        <div id="et-sub-lista" style="margin-bottom:8px;"></div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="et-sub-nueva" placeholder="Agregar paso..." style="flex:1;border:0.5px solid var(--border-md);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;">
+          <button class="btn btn-sm" id="et-sub-add">+ Agregar</button>
+        </div>
+      </div>
       <div class="fg" style="border-top:0.5px solid var(--border);padding-top:12px;margin-top:4px;">
         <label style="font-size:12px;font-weight:500;color:var(--text-2);display:block;margin-bottom:6px;">Adjuntos</label>
         <div id="et-adj-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;"></div>
@@ -715,6 +727,30 @@ function mkAv(v,lg){
   return '<span class="'+cl+'" style="background:'+c.bg+';color:'+c.tx+';">'+ini(v.nombre)+'</span>';
 }
 function mkBadge(e){return '<span class="badge '+bCls(e)+'">'+bLbl(e)+'</span>';}
+function mkQuickCheck(t){
+  var checked=t.est==='completada';
+  return '<input type="checkbox" class="tq-check" data-tqid="'+t.id+'"'+(checked?' checked':'')+' title="Marcar como completada" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--ok);">';
+}
+function bindQuickChecks(containerEl, onChangeCb){
+  if(typeof containerEl==='string')containerEl=document.getElementById(containerEl);
+  if(!containerEl)return;
+  var boxes=containerEl.querySelectorAll('.tq-check');
+  for(var i=0;i<boxes.length;i++){
+    (function(cb){
+      cb.addEventListener('click',function(e){e.stopPropagation();});
+      cb.addEventListener('change',function(e){
+        e.stopPropagation();
+        var t=st.tareas.find(function(x){return x.id===cb.dataset.tqid;});
+        if(!t)return;
+        // Solo alterna pendiente <-> completada. Si estaba "en_proceso" o "incumplida", tildar la pasa a completada;
+        // destildar siempre vuelve a pendiente (para incumplida con motivo, usar el editor completo).
+        t.est=cb.checked?'completada':'pendiente';
+        saveSt();
+        if(onChangeCb)onChangeCb();
+      });
+    })(boxes[i]);
+  }
+}
 function stats(tareas){
   var n=tareas.length,done=0,prog=0,late=0;
   for(var i=0;i<tareas.length;i++){
@@ -1204,6 +1240,7 @@ function renderDash(){
       var atCli=at.cliId?gC(at.cliId):null;
       var atProy=gPbyTarea(at.id);
       h+='<div class="tr-c" data-tid="'+at.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid rgba(163,45,45,.15);font-size:13px;">';
+      h+='<div onclick="event.stopPropagation();">'+mkQuickCheck(at)+'</div>';
       h+='<div style="flex-shrink:0;">'+mkAvs(at.vIds)+'</div>';
       h+='<div style="flex:1;"><div style="font-size:14px;font-weight:600;color:var(--text);">'+at.tit+'</div>';
       if(atCli||atProy)h+='<div style="font-size:11px;color:var(--err);opacity:.75;">'+(atCli?atCli.nombre:'')+(atCli&&atProy?' · ':''+(atProy&&!atCli?atProy.nombre:''))+(atProy&&atCli?atProy.nombre:'')+'</div>';
@@ -1226,6 +1263,7 @@ function renderDash(){
     for(var hi2=0;hi2<tareasHoy.length;hi2++){
       var ht=tareasHoy[hi2];var htCli=ht.cliId?gC(ht.cliId):null;var htProy=gPbyTarea(ht.id);
       h+='<div class="tr-c" data-tid="'+ht.id+'" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px;">';
+      h+='<div onclick="event.stopPropagation();">'+mkQuickCheck(ht)+'</div>';
       h+='<div style="flex-shrink:0;">'+mkAvs(ht.vIds)+'</div>';
       h+='<div style="flex:1;"><div style="font-size:13.5px;font-weight:500;color:var(--text);">'+ht.tit+'</div>';
       if(htCli||htProy)h+='<div style="font-size:11px;color:var(--text-2);">'+(htCli?htCli.nombre:'')+(htCli&&htProy?' · ':''+(htProy&&!htCli?htProy.nombre:''))+(htProy&&htCli?htProy.nombre:'')+'</div>';
@@ -1244,6 +1282,7 @@ function renderDash(){
     for(var si=0;si<limit;si++){
       var st2=tareasSemana[si];var stCli=st2.cliId?gC(st2.cliId):null;
       h+='<div class="tr-c" data-tid="'+st2.id+'" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px;">';
+      h+='<div onclick="event.stopPropagation();">'+mkQuickCheck(st2)+'</div>';
       h+='<div style="flex-shrink:0;">'+mkAvs(st2.vIds)+'</div>';
       h+='<div style="flex:1;"><div style="font-size:12.5px;color:var(--text-2);">'+st2.tit+'</div>';
       if(stCli)h+='<div style="font-size:11px;color:var(--text-3);">'+stCli.nombre+'</div>';
@@ -1299,6 +1338,8 @@ function renderDash(){
 
   document.getElementById('vw-dashboard').innerHTML=h;
 
+  bindQuickChecks('vw-dashboard',function(){renderDash();});
+
   var dashFilV=document.getElementById('dash-fil-v');
   if(dashFilV)dashFilV.addEventListener('change',function(){dashFV=this.value;renderDash();});
 
@@ -1341,6 +1382,13 @@ var fV='',fE='',fP='';
 var dashFV='';
 var tareaVistaModo='lista';
 var verCompletadas=false;
+var verProyArchivados=false;
+var cliProyFiltroMap={};
+function esProyCerradoEfectivo(p){
+  if(p.resultado)return p.resultado==='cerrado'||p.resultado==='cancelado'||p.resultado==='postergado';
+  var pts=tByP(p.id);
+  return pts.length>0&&stats(pts).pct===100;
+}
 function renderActividad(){
   var h='';
   h+='<div class="sh"><h2>Actividad</h2><div style="display:flex;gap:8px;">';
@@ -1386,6 +1434,7 @@ function renderActividad(){
   var tcEl=document.getElementById('btn-toggle-comp');
   if(tcEl)tcEl.addEventListener('click',function(){verCompletadas=!verCompletadas;renderActividad();});
   bindTRows('vw-actividad');
+  bindQuickChecks('vw-actividad',function(){renderActividad();});
   bindRItems('vw-actividad');
   if(actSubView==='tareas'&&tareaVistaModo==='tablero')bindKanbanDrag();
   if(actSubView==='calendario')bindCalendarioNav();
@@ -1433,9 +1482,9 @@ function renderTareasHTML(){
     else if(completadasOcultas>0)h+='<button class="btn btn-sm" id="btn-toggle-comp">Ver completadas ('+completadasOcultas+')</button>';
   }
   h+='</div>';
-  h+='<div class="tbl-wrap"><table><thead><tr><th>Tarea</th><th>Proyecto</th><th>Cliente</th><th>Responsables</th><th>Vence</th><th>Prioridad</th><th>Estado</th></tr></thead><tbody>';
+  h+='<div class="tbl-wrap"><table><thead><tr><th></th><th>Tarea</th><th>Proyecto</th><th>Cliente</th><th>Responsables</th><th>Vence</th><th>Prioridad</th><th>Estado</th></tr></thead><tbody>';
   if(!tareas.length){
-    h+='<tr><td colspan="7" class="empty">Sin tareas con esos filtros.</td></tr>';
+    h+='<tr><td colspan="8" class="empty">Sin tareas con esos filtros.</td></tr>';
   } else {
     for(var i=0;i<tareas.length;i++){
       var t=tareas[i];var e=effE(t);
@@ -1444,7 +1493,10 @@ function renderTareasHTML(){
       var ds=isOv(t)&&t.est!=='completada'?'color:var(--err);font-weight:500;':'color:var(--text-2);';
       var _pjNom=t.pId?gP(t.pId):gPbyTarea(t.id);
       h+='<tr class="tr-c" data-tid="'+t.id+'">';
-      h+='<td style="font-weight:500;color:var(--text);">'+t.tit+'</td>';
+      h+='<td style="width:24px;" onclick="event.stopPropagation();">'+mkQuickCheck(t)+'</td>';
+      var subInd='';
+      if(t.subtareas&&t.subtareas.length){var subDone=t.subtareas.filter(function(s){return s.done;}).length;subInd=' <span style="font-size:11px;color:var(--text-2);font-weight:400;">☑ '+subDone+'/'+t.subtareas.length+'</span>';}
+      h+='<td style="font-weight:500;color:var(--text);">'+t.tit+subInd+'</td>';
       h+='<td style="font-size:12px;color:var(--text-2);">'+(_pjNom?_pjNom.nombre:'—')+'</td>';
       h+='<td style="font-size:12px;color:var(--text-2);">'+(cliNom?cliNom.nombre:'—')+'</td>';
       h+='<td><div style="display:flex;gap:2px;">'+mkAvs(t.vIds)+'</div></td>';
@@ -1491,7 +1543,9 @@ function renderTareasKanban(){
       var cliNom=t.cliId?gC(t.cliId):null;
       var proyNom=t.pId?gP(t.pId):gPbyTarea(t.id);
       h+='<div class="kanban-card" draggable="true" data-tid="'+t.id+'" style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:9px 10px;margin-bottom:8px;cursor:grab;">';
-      h+='<div style="font-size:12.5px;font-weight:500;color:var(--text);margin-bottom:5px;">'+t.tit+'</div>';
+      var subIndK='';
+      if(t.subtareas&&t.subtareas.length){var subDoneK=t.subtareas.filter(function(s){return s.done;}).length;subIndK=' <span style="font-size:10.5px;color:var(--text-2);font-weight:400;">☑'+subDoneK+'/'+t.subtareas.length+'</span>';}
+      h+='<div style="font-size:12.5px;font-weight:500;color:var(--text);margin-bottom:5px;">'+t.tit+subIndK+'</div>';
       if(cliNom||proyNom)h+='<div style="font-size:11px;color:var(--text-2);margin-bottom:5px;">'+(cliNom?cliNom.nombre:'')+(cliNom&&proyNom?' · ':'')+(proyNom?proyNom.nombre:'')+'</div>';
       h+='<div style="display:flex;justify-content:space-between;align-items:center;">';
       h+='<div style="display:flex;gap:2px;">'+mkAvs(t.vIds)+'</div>';
@@ -1788,26 +1842,64 @@ function exportVendedor(vid){
 }
 
 
+function renderEqPendientes(vid){
+  var all=tByV(vid);
+  var pendientes=all.filter(function(t){return t.est!=='completada';});
+  var completadas=all.filter(function(t){return t.est==='completada';});
+  var lista=verCompletadas?all.slice():pendientes;
+  lista=[].concat(lista).sort(function(a,b){
+    var pa=PRIO_ORD[a.prioridad||'normal'];var pb=PRIO_ORD[b.prioridad||'normal'];
+    if(pa!==pb)return pa-pb;
+    return (a.vence||'').localeCompare(b.vence||'');
+  });
+  var hh='';
+  if(!lista.length){
+    hh+='<div style="font-size:13px;color:var(--text-2);">Sin tareas pendientes 🎉</div>';
+  } else {
+    for(var i=0;i<lista.length;i++){
+      var t=lista[i];var e=effE(t);
+      var cliNomEq=t.cliId?gC(t.cliId):null;
+      var proyNomEq=t.pId?gP(t.pId):gPbyTarea(t.id);
+      var ds=isOv(t)&&t.est!=='completada'?'color:var(--err);font-weight:500;':'color:var(--text-2);';
+      hh+='<div class="tr-c" data-tid="'+t.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);">';
+      hh+=mkQuickCheck(t);
+      hh+='<div style="flex:1;min-width:0;">';
+      hh+='<div style="font-size:13px;font-weight:500;color:var(--text);'+(t.est==='completada'?'text-decoration:line-through;color:var(--text-2);':'')+'">'+t.tit+'</div>';
+      if(cliNomEq||proyNomEq)hh+='<div style="font-size:11px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(cliNomEq?cliNomEq.nombre:'')+(cliNomEq&&proyNomEq?' · ':'')+(proyNomEq?proyNomEq.nombre:'')+'</div>';
+      hh+='</div>';
+      hh+='<span style="font-size:11px;'+ds+'white-space:nowrap;">'+fmtD(t.vence)+'</span>';
+      hh+=mkBadgePrio(t.prioridad);
+      hh+=mkBadge(e);
+      hh+='</div>';
+    }
+  }
+  if(!verCompletadas&&completadas.length)hh+='<button class="btn btn-sm" style="width:100%;margin-top:6px;" data-eqcompid="'+vid+'">Ver completadas ('+completadas.length+')</button>';
+  else if(verCompletadas&&completadas.length)hh+='<button class="btn btn-sm" style="width:100%;margin-top:6px;" data-eqcompid="'+vid+'">▲ Ocultar completadas</button>';
+  return hh;
+}
+function refreshEqPendientes(vid){
+  var wrap=document.getElementById('eq-pend-wrap-'+vid);
+  if(!wrap)return;
+  wrap.innerHTML=renderEqPendientes(vid);
+  bindEqPendientes(vid);
+}
+function bindEqPendientes(vid){
+  var wrap=document.getElementById('eq-pend-wrap-'+vid);
+  if(!wrap)return;
+  bindQuickChecks(wrap,function(){refreshEqPendientes(vid);});
+  var tEls=wrap.querySelectorAll('[data-tid]');
+  for(var i=0;i<tEls.length;i++){
+    (function(el){el.addEventListener('click',function(e){if(e.target.classList.contains('tq-check'))return;openEditTarea(el.dataset.tid);});})(tEls[i]);
+  }
+  var btnC=wrap.querySelector('[data-eqcompid]');
+  if(btnC)btnC.addEventListener('click',function(e){e.stopPropagation();verCompletadas=!verCompletadas;refreshEqPendientes(vid);});
+}
 function renderVendedores(){
   var h='';
   h+='<div class="sh"><h2>Rendimiento por vendedor</h2><button class="btn btn-sm" id="btn-edit-eq">Editar equipo</button></div>';
   for(var i=0;i<st.vendedores.length;i++){
     var v=st.vendedores[i];var ts=tByV(v.id);var s=stats(ts);var c=vColor(i);
     var pColor=s.pct>=70?'var(--ok)':s.pct>=40?'#BA7517':'var(--err)';
-    // Proyectos donde es responsable principal O tiene tareas asignadas
-    var vProys=st.proyectos.filter(function(pf){
-      if(pf.respId===v.id){
-        // Es responsable — incluir solo si tiene tareas asignadas o clientes
-        var pts=tByP(pf.id);
-        return pts.length>0||(pf.clientes&&pf.clientes.length>0);
-      }
-      // Colaboración: debe tener al menos una tarea con vId de este vendedor
-      var pts=tByP(pf.id);
-      return pts.some(function(t){
-        var vids=t.vIds||[];
-        return vids.length>0&&vids.indexOf(v.id)>=0;
-      });
-    });
     var vExpandId='vend-expand-'+v.id;
     h+='<div class="vc">';
     // Header clickeable del vendedor
@@ -1815,7 +1907,7 @@ function renderVendedores(){
     h+='<span class="av av-lg" style="background:'+c.bg+';color:'+c.tx+';">'+ini(v.nombre)+'</span>';
     h+='<div style="flex:1;">';
     h+='<div style="font-size:15px;font-weight:500;">'+v.nombre+'</div>';
-    h+='<div style="font-size:12px;color:var(--text-2);">'+vProys.length+' proyecto'+(vProys.length!==1?'s':'')+' · '+s.n+' tarea'+(s.n!==1?'s':'')+' · '+s.done+' ✓ · '+s.late+' vencidas</div>';
+    h+='<div style="font-size:12px;color:var(--text-2);">'+s.n+' tarea'+(s.n!==1?'s':'')+' · '+s.done+' ✓ · '+s.late+' vencidas</div>';
     h+='<div class="pbar" style="margin-top:6px;"><div class="pfill" style="width:'+s.pct+'%;background:'+pColor+';"></div></div>';
     h+='</div>';
     h+='<div style="display:flex;align-items:center;gap:8px;">';
@@ -1823,54 +1915,13 @@ function renderVendedores(){
     h+='<span class="vend-arrow" style="font-size:14px;color:var(--text-2);">▼</span>';
     h+='</div>';
     h+='</div>';
-    // Contenido colapsable
+    // Contenido colapsable: lista plana de pendientes de esta persona
     h+='<div id="'+vExpandId+'" style="display:none;border-top:0.5px solid var(--border);padding:14px 16px;">';
     h+='<div class="vend-toolbar" style="display:flex;gap:6px;margin-bottom:12px;">';
     h+='<button class="btn btn-sm" data-vfilt="'+v.id+'">Ver todas las tareas</button>';
     h+='<button class="btn btn-sm" data-vlink="'+v.id+'">🔗 Ver tareas</button>';
     h+='</div>';
-    // Separar proyectos propios vs colaboraciones
-    var vPropios=vProys.filter(function(pf){return pf.respId===v.id;});
-    var vColab=vProys.filter(function(pf){return pf.respId!==v.id;});
-    function renderEqProyLista(lista){
-      var hh='';
-      for(var j=0;j<lista.length;j++){
-        var pj=lista[j];
-        var ptasks=tByP(pj.id).filter(function(t){return (t.vIds||[]).indexOf(v.id)>=0;});
-        var ps=stats(ptasks);var pclis=pj.clientes||[];
-        var pond=proyValorPonderado(pj);
-        var eqExpandId='eq-proy-expand-'+v.id+'-'+pj.id;
-        hh+='<div id="vc-eq-proy-'+v.id+'-'+pj.id+'" style="border:0.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;">';
-        hh+='<div class="eq-proy-hdr" data-eqpid="'+pj.id+'" data-eqvid="'+v.id+'" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--bg);">';
-        hh+='<div><div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;">'+pj.nombre+(pj.respId!==v.id?'<span style="font-size:10.5px;font-weight:500;color:#712B13;background:#F5C4B3;padding:2px 8px;border-radius:20px;">Colaboración</span>':'')+'</div>';
-        if(pj.respId!==v.id)hh+='<div style="font-size:11px;color:var(--text-2);">Responsable: '+gV(pj.respId).nombre+'</div>';
-        if(pclis.length)hh+='<div style="font-size:11px;color:var(--text-2);">'+pclis.map(function(cl){return cl.nombre;}).join(' · ')+'</div>';
-        hh+='</div>';
-        hh+='<div style="display:flex;align-items:center;gap:8px;">';
-        hh+='<span style="font-size:11px;color:var(--text-2);">'+ptasks.length+' tarea'+(ptasks.length!==1?'s':'')+'</span>';
-        hh+='<span style="font-size:11px;color:var(--ok);">'+ps.done+' ✓</span>';
-        if(pond>0)hh+='<span style="font-size:11px;color:var(--text-2);">$'+Math.round(pond).toLocaleString()+'</span>';
-        hh+='<span class="eq-proy-arrow" style="font-size:12px;color:var(--text-2);">▼</span>';
-        hh+='</div></div>';
-        hh+='<div id="'+eqExpandId+'" style="display:none;padding:12px;border-top:0.5px solid var(--border);">'+renderProyExpand(pj.id,v.id)+'</div>';
-        hh+='</div>';
-      }
-      return hh;
-    }
-    if(vProys.length){
-      h+='<div style="border-top:0.5px solid var(--border);padding-top:12px;">';
-      if(vPropios.length){
-        h+='<div class="sl">Mis proyectos ('+vPropios.length+')</div>';
-        h+=renderEqProyLista(vPropios);
-      }
-      if(vColab.length){
-        h+='<div class="sl" style="margin-top:'+(vPropios.length?'12':'0')+'px;">Colaboraciones ('+vColab.length+')</div>';
-        h+=renderEqProyLista(vColab);
-      }
-      h+='</div>';
-    } else {
-      h+='<div style="font-size:13px;color:var(--text-2);">Sin proyectos asignados.</div>';
-    }
+    h+='<div id="eq-pend-wrap-'+v.id+'">'+renderEqPendientes(v.id)+'</div>';
     h+='</div>'; // cierre contenido colapsable
     h+='</div>'; // cierre .vc
   }
@@ -2254,10 +2305,81 @@ function renderClientes(){
   for(var tfi=0;tfi<tfbtns.length;tfi++){
     (function(btn){btn.addEventListener('click',function(){cliTipoFiltro=btn.dataset.clitipofilt;renderClientes();});})(tfbtns[tfi]);
   }
+  var pchips=document.querySelectorAll('.cliproy-jump-chip');
+  for(var pci2=0;pci2<pchips.length;pci2++){
+    (function(chip){
+      chip.addEventListener('click',function(e){
+        e.stopPropagation();
+        var pid=chip.dataset.jumppid;var cid=chip.dataset.cid;
+        var panel=document.getElementById('cli-chip-expand-'+cid+'-'+pid);
+        if(!panel)return;
+        var wasOpen=panel.style.display!=='none';
+        // Cerrar todos los paneles de este cliente y resetear flechas
+        document.querySelectorAll('[id^="cli-chip-expand-'+cid+'-"]').forEach(function(pn){pn.style.display='none';pn.innerHTML='';});
+        document.querySelectorAll('.cliproy-jump-chip[data-cid="'+cid+'"] .chip-arrow').forEach(function(a){a.textContent='▶';});
+        if(wasOpen)return;
+        panel.style.display='block';
+        panel.innerHTML=renderCliProyPanel(cid,pid);
+        bindCliProyPanel(panel,cid,pid);
+        var arrow=chip.querySelector('.chip-arrow');if(arrow)arrow.textContent='▼';
+      });
+    })(pchips[pci2]);
+  }
+
+  var pfbtns=document.querySelectorAll('.cli-proy-filtbtn');
+  for(var pfi2=0;pfi2<pfbtns.length;pfi2++){
+    (function(btn){btn.addEventListener('click',function(e){e.stopPropagation();cliProyFiltroMap[btn.dataset.cid]=btn.dataset.pf;renderClientes();});})(pfbtns[pfi2]);
+  }
 
   // click en filas manejado por delegación en vw-clientes
 }
 
+function renderCliProyPanel(cid,pid){
+  var p=gP(pid);var c=gC(cid);
+  if(!p||!c)return '';
+  var allTFull=tByP(pid).filter(function(t){
+    if(t.cliId===cid)return true;
+    if(t.cliId){var tc=gC(t.cliId);if(tc&&tc.nombre===c.nombre)return true;}
+    return false;
+  });
+  var completadasCP=allTFull.filter(function(t){return t.est==='completada';});
+  var allT=verCompletadas?allTFull:allTFull.filter(function(t){return t.est!=='completada';});
+  var h='<div style="background:var(--bg);border-radius:var(--r-lg);border:1px solid var(--primary);overflow:hidden;">';
+  h+='<div style="padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">';
+  h+='<span style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;">Tareas de '+c.nombre+' en '+p.nombre+'</span>';
+  if(verCompletadas&&completadasCP.length)h+='<button class="btn btn-sm" id="cliproy-btn-comp">▲ Ocultar completadas</button>';
+  else if(!verCompletadas&&completadasCP.length)h+='<button class="btn btn-sm" id="cliproy-btn-comp">Ver completadas ('+completadasCP.length+')</button>';
+  h+='</div>';
+  if(!allT.length){
+    h+='<div style="padding:4px 12px 10px;font-size:13px;color:var(--text-2);">'+(allTFull.length?'Todas completadas 🎉':'Sin tareas todavía.')+'</div>';
+  } else {
+    h+='<div style="padding:0 8px 8px;">';
+    for(var ti=0;ti<allT.length;ti++){
+      var t=allT[ti];var e=effE(t);
+      h+='<div class="tr-c" data-tid="'+t.id+'" style="display:flex;align-items:center;gap:8px;padding:7px 6px;background:var(--surface);border-radius:var(--r);margin-bottom:4px;">';
+      h+='<div onclick="event.stopPropagation();">'+mkQuickCheck(t)+'</div>';
+      h+='<div style="flex-shrink:0;display:flex;gap:2px;">'+mkAvs(t.vIds)+'</div>';
+      h+='<div style="flex:1;font-size:13px;">'+t.tit+(t.fase?' <span style="font-size:11px;color:var(--primary);">📌 '+t.fase+'</span>':'')+'</div>';
+      h+='<div style="font-size:11px;color:var(--text-2);margin-right:4px;">'+fmtD(t.vence)+'</div>';
+      h+=mkBadge(e);
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  return h;
+}
+function bindCliProyPanel(panel,cid,pid){
+  panel.querySelectorAll('[data-tid]').forEach(function(el){
+    el.addEventListener('click',function(ev){ev.stopPropagation();openEditTarea(el.dataset.tid);});
+  });
+  var btnCP=panel.querySelector('#cliproy-btn-comp');
+  if(btnCP)btnCP.addEventListener('click',function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;panel.innerHTML=renderCliProyPanel(cid,pid);bindCliProyPanel(panel,cid,pid);});
+  bindQuickChecks(panel,function(){
+    panel.innerHTML=renderCliProyPanel(cid,pid);
+    bindCliProyPanel(panel,cid,pid);
+  });
+}
 function renderListaCli(){
   var clis=[].concat(st.clientes).sort(function(a,b){return a.nombre.localeCompare(b.nombre);});
   var etapaFiltro=cliEstFiltro||'';
@@ -2323,6 +2445,34 @@ function renderListaCli(){
     h+='<span style="font-size:16px;color:var(--text-3);" class="cli-arrow-'+c.id+'">▶</span>';
     h+='</div>';
     h+='</div>';
+    // Chips de proyectos (expanden en el lugar, como las fases/clientes en Proyectos)
+    if(proys.length){
+      var proysCerr=proys.filter(function(pp){return esProyCerradoEfectivo(pp);});
+      var proysAct2=proys.filter(function(pp){return proysCerr.indexOf(pp)<0;});
+      var filtroCli=cliProyFiltroMap[c.id]||'activos';
+      var proysShow=filtroCli==='cerrados'?proysCerr:(filtroCli==='todos'?proys:proysAct2);
+      if(proys.length>1){
+        h+='<div style="padding:0 16px 6px 64px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;">';
+        h+='<button class="btn btn-sm cli-proy-filtbtn" data-cid="'+c.id+'" data-pf="activos" style="'+(filtroCli==='activos'?'background:var(--primary);color:#fff;border-color:var(--primary);':'')+'padding:2px 9px;font-size:11px;">Activos ('+proysAct2.length+')</button>';
+        h+='<button class="btn btn-sm cli-proy-filtbtn" data-cid="'+c.id+'" data-pf="cerrados" style="'+(filtroCli==='cerrados'?'background:var(--primary);color:#fff;border-color:var(--primary);':'')+'padding:2px 9px;font-size:11px;">Cerrados ('+proysCerr.length+')</button>';
+        h+='<button class="btn btn-sm cli-proy-filtbtn" data-cid="'+c.id+'" data-pf="todos" style="'+(filtroCli==='todos'?'background:var(--primary);color:#fff;border-color:var(--primary);':'')+'padding:2px 9px;font-size:11px;">Todos ('+proys.length+')</button>';
+        h+='</div>';
+      }
+      h+='<div style="padding:0 16px 12px 64px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;">';
+      if(!proysShow.length)h+='<span style="font-size:12px;color:var(--text-2);">Sin proyectos en este filtro.</span>';
+      for(var pci=0;pci<proysShow.length;pci++){
+        var pchip=proysShow[pci];
+        var pchipTs=tByP(pchip.id);var pchipStats=stats(pchipTs);
+        var estBadge='';
+        if(pchip.resultado)estBadge='<span style="margin-left:3px;display:inline-block;">'+mkResultadoBadge(pchip.resultado)+'</span>';
+        else if(pchipTs.length&&pchipStats.pct===100)estBadge='<span class="badge" style="background:#EAF3DE;color:#3B6D11;margin-left:3px;">✓ 100%</span>';
+        h+='<span class="cliproy-jump-chip" data-jumppid="'+pchip.id+'" data-cid="'+c.id+'" style="font-size:11px;background:var(--bg);border:1px solid var(--border-md);color:var(--text-2);border-radius:20px;padding:3px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">📁 '+pchip.nombre+estBadge+'<span class="chip-arrow" style="font-size:10px;">▶</span></span>';
+      }
+      h+='</div>';
+      for(var pci2=0;pci2<proys.length;pci2++){
+        h+='<div id="cli-chip-expand-'+c.id+'-'+proys[pci2].id+'" style="display:none;padding:0 16px 12px 64px;"></div>';
+      }
+    }
     // Expand body
     h+='<div id="cliexp-body-'+c.id+'" style="display:none;border-top:0.5px solid var(--border);padding:16px 20px;background:var(--bg);"></div>';
     h+='</div>';
@@ -2681,13 +2831,26 @@ function openDetalleCliente(cid,inlineBodyId){
     }
   }
   if(proys.length){
+    var proysArch=proys.filter(function(p){return p.resultado==='cerrado'||p.resultado==='cancelado'||p.resultado==='postergado';});
+    var proysAct=proys.filter(function(p){return proysArch.indexOf(p)<0;});
+    // Orden: los activos primero por urgencia (los con tareas vencidas arriba)
+    proysAct.sort(function(a,b){
+      var av=tByP(a.id).some(function(t){return isOv(t);})?0:1;
+      var bv=tByP(b.id).some(function(t){return isOv(t);})?0:1;
+      return av-bv;
+    });
+    var proysOrdenado=verProyArchivados?proysAct.concat(proysArch):proysAct;
     hAct+='<div class="cli-det-sec">';
-    hAct+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div class="sl" style="margin-bottom:0;">Proyectos ('+proys.length+')</div>';
+    hAct+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><div class="sl" style="margin-bottom:0;">Proyectos ('+proys.length+')</div><div style="display:flex;gap:6px;">';
+    if(proysArch.length){
+      if(verProyArchivados)hAct+='<button class="btn btn-sm" id="clidet-btn-arch">▲ Ocultar cerrados/cancelados</button>';
+      else hAct+='<button class="btn btn-sm" id="clidet-btn-arch">Ver cerrados/cancelados ('+proysArch.length+')</button>';
+    }
     if(verCompletadas)hAct+='<button class="btn btn-sm" id="clidet-btn-comp">▲ Ocultar completadas</button>';
     else if(totalCompOcultasCli>0)hAct+='<button class="btn btn-sm" id="clidet-btn-comp">Ver completadas ('+totalCompOcultasCli+')</button>';
-    hAct+='</div>';
-    for(var pi=0;pi<proys.length;pi++){
-      var p=proys[pi];var vp=gV(p.respId);
+    hAct+='</div></div>';
+    for(var pi=0;pi<proysOrdenado.length;pi++){
+      var p=proysOrdenado[pi];var vp=gV(p.respId);
       var cliEnProy=null;
       var pclis=p.clientes||[];
       for(var pj=0;pj<pclis.length;pj++){if(pclis[pj]._cid===cid||pclis[pj].nombre===c.nombre){cliEnProy=pclis[pj];break;}}
@@ -2733,7 +2896,7 @@ function openDetalleCliente(cid,inlineBodyId){
       }
       hAct+='<div class="cliproy-hdr" data-expandid="'+expandId+'" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;cursor:pointer;background:var(--surface);">';
       hAct+='<div style="flex:1;">';
-      hAct+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;"><span style="font-size:13px;font-weight:500;">'+p.nombre+'</span>'+alertaBadge+'</div>';
+      hAct+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;"><span style="font-size:13px;font-weight:500;">'+p.nombre+'</span>'+(p.resultado?mkResultadoBadge(p.resultado):'')+alertaBadge+'</div>';
       if(cliEnProy&&cliEnProy.fase)hAct+='<div style="font-size:11px;color:var(--primary);font-weight:500;margin-bottom:2px;">📌 '+cliEnProy.fase+'</div>';
       hAct+='<div style="font-size:11px;color:var(--text-2);display:flex;align-items:center;gap:6px;">Resp. '+vp.nombre+' · '+ptareas.length+' tarea'+(ptareas.length!==1?'s':'')+' · <span style="color:'+pctColor+';font-weight:500;">'+pct+'% cumplimiento</span>'+(cliEnProy&&cliEnProy.resultado?mkResultadoBadge(cliEnProy.resultado):'')+' </div>';
       hAct+='<div style="background:#e5e7eb;border-radius:20px;height:4px;margin-top:5px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;border-radius:20px;background:'+pctColor+';"></div></div>';
@@ -2770,6 +2933,7 @@ function openDetalleCliente(cid,inlineBodyId){
             if(!verCompletadas&&pt.est==='completada')continue;
             var pe=effE(pt);
             hAct+='<div class="tr-c" data-tid="'+pt.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:0.5px solid var(--border);">';
+            hAct+='<div onclick="event.stopPropagation();">'+mkQuickCheck(pt)+'</div>';
             hAct+='<div style="flex-shrink:0;display:flex;gap:2px;">'+mkAvs(pt.vIds)+'</div>';
             hAct+='<div style="flex:1;font-size:13px;">'+pt.tit+'</div>';
             hAct+='<div style="font-size:11px;color:var(--text-2);margin-right:6px;">'+fmtD(pt.vence)+'</div>';
@@ -2822,6 +2986,7 @@ function openDetalleCliente(cid,inlineBodyId){
   h+='<div style="display:'+(clisubtab==='actividad'?'block':'none')+';" id="clisub-actividad-'+cid+'">'+hAct+'</div>';
 
 var bodyEl2=document.getElementById(bodyId);if(bodyEl2)bodyEl2.innerHTML=h;
+  if(bodyEl2)bindQuickChecks(bodyEl2,function(){openDetalleCliente(cid,inlineBodyId);});
 
   // Novedad btn
   var novBtn=document.getElementById('clidet-nov-btn');
@@ -2931,6 +3096,9 @@ var bodyEl2=document.getElementById(bodyId);if(bodyEl2)bodyEl2.innerHTML=h;
   // Botón ver/ocultar completadas
   var btnComp=document.getElementById('clidet-btn-comp');
   if(btnComp){(function(cid,inlId){btnComp.addEventListener('click',function(){verCompletadas=!verCompletadas;openDetalleCliente(cid,inlId);});})(detClienteId,inlineBodyId);}
+  // Botón ver/ocultar proyectos cerrados
+  var btnArch=document.getElementById('clidet-btn-arch');
+  if(btnArch){(function(cid,inlId){btnArch.addEventListener('click',function(){verProyArchivados=!verProyArchivados;openDetalleCliente(cid,inlId);});})(detClienteId,inlineBodyId);}
 
   if(!inlineBodyId)openOv('ov-clidet');
 }
@@ -3021,6 +3189,7 @@ function renderProyExpand(pid,filtroVId){
         if(!clTareas.length){h+='<div style="padding:8px 12px;font-size:13px;color:var(--text-2);">Sin tareas en este proyecto.</div>';}
         else{for(var cj=0;cj<clTareas.length;cj++){var t=clTareas[cj];var e=effE(t);
           h+='<div class="tr-c" data-tid="'+t.id+'" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:0.5px solid var(--border);">';
+          h+='<div onclick="event.stopPropagation();">'+mkQuickCheck(t)+'</div>';
           h+='<div style="flex-shrink:0;display:flex;gap:2px;">'+mkAvs(t.vIds)+'</div>';
           h+='<div style="flex:1;font-size:13px;">'+t.tit+'</div>';
           h+='<div style="font-size:11px;color:var(--text-2);margin-right:8px;">'+fmtD(t.vence)+'</div>';
@@ -3088,6 +3257,7 @@ function renderProyExpand(pid,filtroVId){
       for(var ti3=0;ti3<faseTareas.length;ti3++){
         var t=faseTareas[ti3];var e=effE(t);
         h+='<div class="tr-c" data-tid="'+t.id+'" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);margin-bottom:4px;background:var(--surface);">';
+        h+='<div onclick="event.stopPropagation();">'+mkQuickCheck(t)+'</div>';
         h+='<div style="flex-shrink:0;display:flex;gap:2px;">'+mkAvs(t.vIds)+'</div>';
         h+='<div style="flex:1;font-size:13px;">'+t.tit+'</div>';
         if(t.cliId){var tc2=gC(t.cliId);if(tc2)h+='<span style="font-size:11px;color:var(--text-2);margin-right:4px;">'+tc2.nombre+'</span>';}
@@ -3150,14 +3320,24 @@ function renderProyExpand(pid,filtroVId){
   return h;
 }
 
+var proyEstadoFiltro='activos';
 function renderProyectos(){
   var h='';
   h+='<div class="sh"><h2>Proyectos ('+st.proyectos.length+')</h2><div style="display:flex;gap:6px;"><button class="btn btn-sm" id="btn-exp-proy">↓ Exportar</button><button class="btn btn-p" id="btn-nuevo-proy">+ Nuevo proyecto</button></div></div>';
   if(!st.proyectos.length){
     h+='<div class="empty">No hay proyectos todavía.</div>';
   } else {
-    for(var i=0;i<st.proyectos.length;i++){
-      var p=st.proyectos[i];
+    var proyCerr2=st.proyectos.filter(function(pp){return esProyCerradoEfectivo(pp);});
+    var proyAct3=st.proyectos.filter(function(pp){return proyCerr2.indexOf(pp)<0;});
+    h+='<div class="filters" style="margin-bottom:14px;">';
+    h+='<button class="btn btn-sm'+(proyEstadoFiltro==='activos'?' btn-p':'')+'" data-proyestfilt="activos">Activos ('+proyAct3.length+')</button>';
+    h+='<button class="btn btn-sm'+(proyEstadoFiltro==='cerrados'?' btn-p':'')+'" data-proyestfilt="cerrados">Cerrados ('+proyCerr2.length+')</button>';
+    h+='<button class="btn btn-sm'+(proyEstadoFiltro==='todos'?' btn-p':'')+'" data-proyestfilt="todos">Todos ('+st.proyectos.length+')</button>';
+    h+='</div>';
+    var proysList=proyEstadoFiltro==='cerrados'?proyCerr2:(proyEstadoFiltro==='todos'?st.proyectos:proyAct3);
+    if(!proysList.length)h+='<div class="empty">No hay proyectos en este filtro.</div>';
+    for(var i=0;i<proysList.length;i++){
+      var p=proysList[i];
       var v=gV(p.respId);var vi=gVi(p.respId);var vc2=vColor(vi);
       var clis=p.clientes||[];
       var ts=tByP(p.id);var st2=stats(ts);
@@ -3235,6 +3415,10 @@ function renderProyectos(){
   if(bn)bn.addEventListener('click',function(){openProyectoModal(null);});
   var bep=document.getElementById('btn-exp-proy');
   if(bep)bep.addEventListener('click',exportProyectos);
+  var pebtns=document.querySelectorAll('[data-proyestfilt]');
+  for(var pebi=0;pebi<pebtns.length;pebi++){
+    (function(btn){btn.addEventListener('click',function(){proyEstadoFiltro=btn.dataset.proyestfilt;renderProyectos();});})(pebtns[pebi]);
+  }
 
   // Chips expandibles
   var chips=document.querySelectorAll('.proy-cli-chip,.proy-fase-chip');
@@ -3746,7 +3930,23 @@ function addPCliTareaRow(container, t, cliNombre){
   }
   var xb=document.createElement('button');xb.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-2);font-size:16px;line-height:1;padding:0;flex-shrink:0;';xb.textContent='x';
   (function(d){xb.onclick=function(e){e.stopPropagation();container.removeChild(d);};})(div);
-  row1.appendChild(titIn);row1.appendChild(respWrap);row1.appendChild(xb);
+  row1.appendChild(titIn);row1.appendChild(respWrap);
+  if(t){
+    if(t.subtareas&&t.subtareas.length){
+      var subDoneR=t.subtareas.filter(function(s){return s.done;}).length;
+      var subBadge=document.createElement('span');
+      subBadge.style.cssText='font-size:10.5px;color:var(--text-2);flex-shrink:0;white-space:nowrap;';
+      subBadge.textContent='☑'+subDoneR+'/'+t.subtareas.length;
+      row1.appendChild(subBadge);
+    }
+    var openFullBtn=document.createElement('button');
+    openFullBtn.title='Abrir tarea completa (subtareas, adjuntos, novedades)';
+    openFullBtn.style.cssText='background:none;border:0.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;color:var(--text-2);font-size:13px;line-height:1;padding:4px 7px;flex-shrink:0;';
+    openFullBtn.textContent='⋯';
+    (function(tid){openFullBtn.onclick=function(e){e.stopPropagation();openEditTarea(tid);};})(t.id);
+    row1.appendChild(openFullBtn);
+  }
+  row1.appendChild(xb);
 
   // ROW 2: prioridad + fecha + estado + cliente (compacto, en una sola fila)
   var row2=document.createElement('div');row2.style.cssText='display:grid;grid-template-columns:0.8fr 1fr 1fr 1.2fr;gap:6px;';
@@ -3956,6 +4156,109 @@ function actualizarContactosCli(selectCliId, selectContactoId){
   }
 }
 
+var _etSubtareas=[];
+function renderEtSubtareas(){
+  var wrap=document.getElementById('et-sub-lista');
+  var prog=document.getElementById('et-sub-progreso');
+  if(!wrap)return;
+  var doneCount=_etSubtareas.filter(function(s){return s.done;}).length;
+  if(prog)prog.textContent=_etSubtareas.length?'('+doneCount+'/'+_etSubtareas.length+')':'';
+  var h='';
+  if(!_etSubtareas.length)h='<div style="font-size:12px;color:var(--text-2);">Sin pasos agregados.</div>';
+  for(var i=0;i<_etSubtareas.length;i++){
+    var s=_etSubtareas[i];
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border);">';
+    h+='<input type="checkbox" data-subidx="'+i+'" class="et-sub-cb" style="width:15px;height:15px;flex-shrink:0;cursor:pointer;"'+(s.done?' checked':'')+'>';
+    h+='<span style="flex:1;font-size:13px;'+(s.done?'text-decoration:line-through;color:var(--text-2);':'')+'">'+s.texto+'</span>';
+    h+='<button class="bi" data-subdel="'+i+'" style="font-size:15px;">×</button>';
+    h+='</div>';
+  }
+  wrap.innerHTML=h;
+  var cbs=wrap.querySelectorAll('.et-sub-cb');
+  for(var ci=0;ci<cbs.length;ci++){
+    (function(cb){cb.addEventListener('change',function(){_etSubtareas[+cb.dataset.subidx].done=cb.checked;renderEtSubtareas();});})(cbs[ci]);
+  }
+  var dels=wrap.querySelectorAll('[data-subdel]');
+  for(var di=0;di<dels.length;di++){
+    (function(btn){btn.addEventListener('click',function(){_etSubtareas.splice(+btn.dataset.subdel,1);renderEtSubtareas();});})(dels[di]);
+  }
+}
+function bindEtSubAdd(){
+  var btn=document.getElementById('et-sub-add');
+  var inp=document.getElementById('et-sub-nueva');
+  if(!btn||!inp)return;
+  btn.onclick=function(){
+    var val=inp.value.trim();if(!val)return;
+    _etSubtareas.push({texto:val,done:false});
+    inp.value='';
+    renderEtSubtareas();
+  };
+  inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();btn.click();}};
+}
+function fillEtProyOpts(selId){
+  var sel=document.getElementById('et-proy');if(!sel)return;
+  sel.innerHTML='';
+  var bl=document.createElement('option');bl.value='';bl.textContent='— Proyecto (opcional) —';sel.appendChild(bl);
+  for(var pi=0;pi<st.proyectos.length;pi++){
+    var pj=st.proyectos[pi];
+    var op=document.createElement('option');op.value=pj.id;op.textContent=pj.nombre;
+    if(selId&&selId===pj.id)op.selected=true;
+    sel.appendChild(op);
+  }
+  var pNew=document.createElement('option');pNew.value='__new_proy__';pNew.textContent='+ Crear proyecto nuevo...';sel.appendChild(pNew);
+}
+function loadEtFases(pid,selFase){
+  var sel=document.getElementById('et-fase');if(!sel)return;
+  sel.innerHTML='';
+  var bl=document.createElement('option');bl.value='';bl.textContent='— Fase (opcional) —';sel.appendChild(bl);
+  var fasesSet={};
+  if(pid){
+    var pjf=gP(pid);
+    if(pjf){
+      (pjf.clientes||[]).forEach(function(cl){if(cl.fase)fasesSet[cl.fase]=true;});
+      tByP(pid).forEach(function(tt){if(tt.fase)fasesSet[tt.fase]=true;});
+    }
+  }
+  Object.keys(fasesSet).forEach(function(f){
+    var op=document.createElement('option');op.value=f;op.textContent=f;
+    if(selFase&&selFase===f)op.selected=true;
+    sel.appendChild(op);
+  });
+  var fNew=document.createElement('option');fNew.value='__new_fase__';fNew.textContent='+ Crear fase nueva...';sel.appendChild(fNew);
+}
+function bindEtProyFase(){
+  var proySel=document.getElementById('et-proy');
+  var faseSel=document.getElementById('et-fase');
+  if(!proySel||!faseSel)return;
+  proySel.onchange=function(){
+    if(proySel.value==='__new_proy__'){
+      var nombreP=prompt('Nombre del proyecto nuevo:');
+      if(nombreP&&nombreP.trim()){
+        var nIdP='pj'+Date.now()+Math.floor(Math.random()*999);
+        st.proyectos.push({id:nIdP,nombre:nombreP.trim(),desc:'',respId:'',inicio:today(),resultado:'',tipo:'desarrollo',clientes:[],fases:[],novedades:[],tIds:[]});
+        saveSt();
+        fillEtProyOpts(nIdP);
+        loadEtFases(nIdP,'');
+      } else {
+        proySel.value='';
+        loadEtFases('','');
+      }
+    } else {
+      loadEtFases(proySel.value,'');
+    }
+  };
+  faseSel.onchange=function(){
+    if(faseSel.value==='__new_fase__'){
+      var nombreF=prompt('Nombre de la fase/hito nueva:');
+      if(nombreF&&nombreF.trim()){
+        var fop=document.createElement('option');fop.value=nombreF.trim();fop.textContent=nombreF.trim();fop.selected=true;
+        faseSel.insertBefore(fop,faseSel.lastElementChild);
+      } else {
+        faseSel.value='';
+      }
+    }
+  };
+}
 function openEditTarea(id){
   if(id==='__nuevo__'){
     editTareaId=null;
@@ -3978,6 +4281,12 @@ function openEditTarea(id){
     document.getElementById('et-clicontacto').value='';
     document.getElementById('et-inicio').value='';
     document.getElementById('et-notas').value='';
+    fillEtProyOpts('');
+    loadEtFases('','');
+    bindEtProyFase();
+    _etSubtareas=[];
+    renderEtSubtareas();
+    bindEtSubAdd();
     var etNovWrapN=document.getElementById('et-novedades-wrap');
     if(etNovWrapN)etNovWrapN.innerHTML='';
     openEditTarea._adjs=[];
@@ -4013,6 +4322,12 @@ function openEditTarea(id){
   document.getElementById('et-clicontacto').value=t.contactoNombre||'';
   document.getElementById('et-inicio').value=t.inicio||'';
   document.getElementById('et-notas').value=t.notas||'';
+  fillEtProyOpts(t.pId||'');
+  loadEtFases(t.pId||'', t.fase||'');
+  bindEtProyFase();
+  _etSubtareas=JSON.parse(JSON.stringify(t.subtareas||[]));
+  renderEtSubtareas();
+  bindEtSubAdd();
   // Adjuntos de la tarea
   openEditTarea._adjs=JSON.parse(JSON.stringify(t.adjuntos||[]));
   renderTareaAdjs(openEditTarea._adjs);
@@ -4069,6 +4384,11 @@ var _tareaOrigen=null; // {tipo:'cli'|'proy', id:'...'} para volver después de 
 function openEditTareaConProy(pId){
   _tareaOrigen={tipo:'proy',id:pId};
   openEditTarea('__nuevo__');
+  // Preseleccionar el proyecto y sus fases
+  setTimeout(function(){
+    fillEtProyOpts(pId);
+    loadEtFases(pId,'');
+  },40);
   // Marcar el select de cliente con opción "General del proyecto"
   setTimeout(function(){
     var sel=document.getElementById('et-cli');
@@ -4124,18 +4444,19 @@ function saveEditTarea(){
   var contactoNombre=document.getElementById('et-clicontacto')?document.getElementById('et-clicontacto').value:'';
   var inicio=document.getElementById('et-inicio')?document.getElementById('et-inicio').value:'';
   var notas=document.getElementById('et-notas').value;
+  var proySelVal=document.getElementById('et-proy')?document.getElementById('et-proy').value:'';
+  var faseSelVal=document.getElementById('et-fase')?document.getElementById('et-fase').value:'';
   if(!editTareaId){
     var nId='t'+Date.now()+Math.floor(Math.random()*9999);
-    var nPId='';
-    if(_tareaOrigen&&_tareaOrigen.tipo==='proy'){nPId=_tareaOrigen.id;}
-    st.tareas.push({id:nId,tit:tit,rId:'',pId:nPId,vIds:vIds,vence:vence,est:est,prioridad:prioridad,motivo:motivo,cliId:cliId,contactoNombre:contactoNombre,inicio:inicio,notas:notas,adjuntos:openEditTarea._adjs||[]});
+    var nPId=proySelVal||(_tareaOrigen&&_tareaOrigen.tipo==='proy'?_tareaOrigen.id:'');
+    st.tareas.push({id:nId,tit:tit,rId:'',pId:nPId,vIds:vIds,vence:vence,est:est,prioridad:prioridad,motivo:motivo,cliId:cliId,contactoNombre:contactoNombre,inicio:inicio,notas:notas,fase:faseSelVal,subtareas:_etSubtareas.slice(),adjuntos:openEditTarea._adjs||[]});
     // Si viene de un proyecto, agregar al tIds
     if(nPId){var pp=gP(nPId);if(pp){if(!pp.tIds)pp.tIds=[];pp.tIds.push(nId);}}
     saveSt();
     var origen=_tareaOrigen;_tareaOrigen=null;
     closeOv('ov-tarea');
     if(origen&&origen.tipo==='cli'){setTimeout(function(){openDetalleCliente(origen.id);},100);}
-    else if(origen&&origen.tipo==='proy'){setTimeout(function(){openDetalleProy(origen.id);},100);}
+    else if(origen&&origen.tipo==='proy'){_lastOpenPid=origen.id;nav('proyectos');}
     else{render(curView);}
     return;
   }
@@ -4152,6 +4473,13 @@ function saveEditTarea(){
   t.contactoNombre=contactoNombre;
   t.inicio=inicio;
   t.notas=notas;
+  var prevPId=t.pId;
+  t.pId=proySelVal;
+  t.fase=faseSelVal;
+  if(proySelVal&&proySelVal!==prevPId){
+    var newPj=gP(proySelVal);if(newPj){if(!newPj.tIds)newPj.tIds=[];if(newPj.tIds.indexOf(t.id)<0)newPj.tIds.push(t.id);}
+  }
+  t.subtareas=_etSubtareas.slice();
   t.adjuntos=openEditTarea._adjs||[];
   saveSt();closeOv('ov-tarea');renderAndRestore();
 }
@@ -4241,8 +4569,14 @@ function renderAndRestore(){
 }
 
 // REUNION MODAL
+var _lastRnVIds=[];
+var _lastRnCliId='';
+var _lastRnPId='';
 function openReunionModal(rid,preCliId,preProyId){
   editReunionId=rid;
+  _lastRnVIds=[];
+  _lastRnCliId='';
+  _lastRnPId='';
   var r=rid?gR(rid):null;
   document.getElementById('ov-r-titulo').textContent=r?'Editar reunion':'Nueva reunion';
   document.getElementById('rn-titulo').value=r?r.titulo:'';
@@ -4325,7 +4659,8 @@ function addTFRow(t){
   titIn.style.cssText='width:100%;border:0.5px solid var(--border-md);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;margin-bottom:6px;';
   var respDiv=document.createElement('div');respDiv.className='tf-resps';
   respDiv.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;';
-  var selVIds=t?t.vIds||[]:[];
+  var selVIds=t?t.vIds||[]:_lastRnVIds.slice();
+  var rowVIdsRn=selVIds.slice();
   for(var ri=0;ri<st.vendedores.length;ri++){
     var rv=st.vendedores[ri];var rc=vColor(ri);
     var rlbl=document.createElement('label');rlbl.style.cssText='display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;';
@@ -4334,6 +4669,12 @@ function addTFRow(t){
     var rsp=document.createElement('span');rsp.className='av';rsp.style.cssText='width:22px;height:22px;font-size:10px;background:'+rc.bg+';color:'+rc.tx+';';rsp.textContent=ini(rv.nombre);
     rlbl.appendChild(rcb);rlbl.appendChild(rsp);
     respDiv.appendChild(rlbl);
+    (function(cb,vid){cb.addEventListener('change',function(){
+      var idx=rowVIdsRn.indexOf(vid);
+      if(cb.checked&&idx<0)rowVIdsRn.push(vid);
+      if(!cb.checked&&idx>=0)rowVIdsRn.splice(idx,1);
+      _lastRnVIds=rowVIdsRn.slice();
+    });})(rcb,rv.id);
   }
   var datIn=document.createElement('input');datIn.type='date';datIn.className='tf-fecha';datIn.value=t?t.vence:inWeek();
   datIn.style.cssText='border:0.5px solid var(--border-md);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;width:100%;margin-bottom:6px;';
@@ -4354,7 +4695,7 @@ function addTFRow(t){
     var pNew=document.createElement('option');pNew.value='__new_proy__';pNew.textContent='+ Crear proyecto nuevo...';pNew.dataset.dyn='1';
     proySelect.appendChild(pNew);
   }
-  fillProyOpts(t?t.pId:'');
+  fillProyOpts(t?t.pId:(_lastRnPId||''));
   var faseSelect=document.createElement('select');faseSelect.className='tf-fase';faseSelect.style.cssText=ss2;
   var fBlank=document.createElement('option');fBlank.value='';fBlank.textContent='— Fase (opcional) —';faseSelect.appendChild(fBlank);
   function loadFases(pid,selFase){
@@ -4374,7 +4715,7 @@ function addTFRow(t){
     });
     var fNew=document.createElement('option');fNew.value='__new_fase__';fNew.textContent='+ Crear fase nueva...';faseSelect.appendChild(fNew);
   }
-  loadFases(t?t.pId:'', t?t.fase:'');
+  loadFases(t?t.pId:(_lastRnPId||''), t?t.fase:'');
   proySelect.addEventListener('change',function(){
     if(proySelect.value==='__new_proy__'){
       var nombreP=prompt('Nombre del proyecto nuevo:');
@@ -4384,12 +4725,14 @@ function addTFRow(t){
         saveSt();
         fillProyOpts(nIdP);
         loadFases(nIdP,'');
+        _lastRnPId=nIdP;
       } else {
         proySelect.value='';
         loadFases('','');
       }
     } else {
       loadFases(proySelect.value,'');
+      _lastRnPId=proySelect.value;
     }
   });
   faseSelect.addEventListener('change',function(){
@@ -4406,7 +4749,8 @@ function addTFRow(t){
   proyRow.appendChild(proySelect);proyRow.appendChild(faseSelect);
 
   var cliSelect=document.createElement('select');cliSelect.className='tf-cli';cliSelect.style.cssText=ss2;
-  cliSelect.innerHTML=mkCliOpts(t?t.cliId||'':'');
+  cliSelect.innerHTML=mkCliOpts(t?t.cliId||'':(_lastRnCliId||''));
+  cliSelect.addEventListener('change',function(){_lastRnCliId=cliSelect.value;});
 
   div.appendChild(hdr);div.appendChild(titIn);div.appendChild(respDiv);div.appendChild(datIn);div.appendChild(proyRow);div.appendChild(cliSelect);
   if(t){
@@ -4419,6 +4763,11 @@ function addTFRow(t){
     div.appendChild(estSel);
   }
   document.getElementById('rn-tareas').appendChild(div);
+  if(t){
+    if(rowVIdsRn.length)_lastRnVIds=rowVIdsRn.slice();
+    if(t.cliId)_lastRnCliId=t.cliId;
+    if(t.pId)_lastRnPId=t.pId;
+  }
 }
 
 function saveReunion(){
@@ -5077,6 +5426,11 @@ document.getElementById('vw-proyectos').addEventListener('click',function(e){
 });
 
 function bindProyExpandHandlers(div, pid){
+  bindQuickChecks(div,function(){
+    var p2r=gP(pid);if(!p2r)return;
+    div.innerHTML=renderProyExpand(pid);
+    bindProyExpandHandlers(div,pid);
+  });
   // bindear headers de fase
   var faseHdrs=div.querySelectorAll('.fase-hdr');
   for(var fhi=0;fhi<faseHdrs.length;fhi++){
