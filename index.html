@@ -2776,6 +2776,25 @@ function delCliente(cid){
   saveSt();closeOv('ov-cliente');closeOv('ov-clidet');render(curView);
 }
 
+function _capturarAbiertosCliFicha(bodyId){
+  var cont=document.getElementById(bodyId);
+  var out=[];
+  if(!cont)return out;
+  var els=cont.querySelectorAll('[id^="clifase-expand-"]');
+  for(var i=0;i<els.length;i++){if(els[i].style.display==='block')out.push(els[i].id);}
+  return out;
+}
+function _reabrirCliFicha(bodyId,abiertos){
+  var cont=document.getElementById(bodyId);
+  if(!cont||!abiertos)return;
+  abiertos.forEach(function(id){
+    var el=cont.querySelector('#'+CSS.escape(id));
+    if(!el)return;
+    el.style.display='block';
+    var hdr=cont.querySelector('[data-fcexpand="'+id+'"]');
+    if(hdr){var arr=hdr.querySelector('.clifase-arrow');if(arr)arr.textContent='▼';}
+  });
+}
 function openDetalleCliente(cid,inlineBodyId){
   var bodyId=inlineBodyId||'clidet-body';
   detClienteId=cid;
@@ -3048,7 +3067,12 @@ function openDetalleCliente(cid,inlineBodyId){
   h+='<div style="display:'+(clisubtab==='actividad'?'block':'none')+';" id="clisub-actividad-'+cid+'">'+hAct+'</div>';
 
 var bodyEl2=document.getElementById(bodyId);if(bodyEl2)bodyEl2.innerHTML=h;
-  if(bodyEl2)bindQuickChecks(bodyEl2,function(){openDetalleCliente(cid,inlineBodyId);});
+  if(bodyEl2)bindQuickChecks(bodyEl2,function(){
+    var bId=inlineBodyId||'clidet-body';
+    var abiertos=_capturarAbiertosCliFicha(bId);
+    openDetalleCliente(cid,inlineBodyId);
+    _reabrirCliFicha(bId,abiertos);
+  });
 
   // Novedad btn
   var novBtn=document.getElementById('clidet-nov-btn');
@@ -3157,10 +3181,22 @@ var bodyEl2=document.getElementById(bodyId);if(bodyEl2)bodyEl2.innerHTML=h;
   if(btnNR){(function(cid){btnNR.addEventListener('click',function(){if(!inlineBodyId)closeOv('ov-clidet');setTimeout(function(){openReunionModal(null,cid);},100);});})(detClienteId);}
   // Botón ver/ocultar completadas
   var btnComp=document.getElementById('clidet-btn-comp');
-  if(btnComp){(function(cid,inlId){btnComp.addEventListener('click',function(){verCompletadas=!verCompletadas;openDetalleCliente(cid,inlId);});})(detClienteId,inlineBodyId);}
+  if(btnComp){(function(cid,inlId){btnComp.addEventListener('click',function(){
+    verCompletadas=!verCompletadas;
+    var bId=inlId||'clidet-body';
+    var abiertos=_capturarAbiertosCliFicha(bId);
+    openDetalleCliente(cid,inlId);
+    _reabrirCliFicha(bId,abiertos);
+  });})(detClienteId,inlineBodyId);}
   // Botón ver/ocultar proyectos cerrados
   var btnArch=document.getElementById('clidet-btn-arch');
-  if(btnArch){(function(cid,inlId){btnArch.addEventListener('click',function(){verProyArchivados=!verProyArchivados;openDetalleCliente(cid,inlId);});})(detClienteId,inlineBodyId);}
+  if(btnArch){(function(cid,inlId){btnArch.addEventListener('click',function(){
+    verProyArchivados=!verProyArchivados;
+    var bId=inlId||'clidet-body';
+    var abiertos=_capturarAbiertosCliFicha(bId);
+    openDetalleCliente(cid,inlId);
+    _reabrirCliFicha(bId,abiertos);
+  });})(detClienteId,inlineBodyId);}
 
   if(!inlineBodyId)openOv('ov-clidet');
 }
@@ -5516,8 +5552,11 @@ document.getElementById('vw-proyectos').addEventListener('click',function(e){
 function bindProyExpandHandlers(div, pid){
   bindQuickChecks(div,function(){
     var p2r=gP(pid);if(!p2r)return;
+    var snap=_capturarAbiertos();
     div.innerHTML=renderProyExpand(pid);
     bindProyExpandHandlers(div,pid);
+    window._abiertosSnapshot=snap;
+    _reabrirAnidados('vw-'+curView);
   });
   // bindear headers de fase
   var faseHdrs=div.querySelectorAll('.fase-hdr');
@@ -5566,7 +5605,15 @@ function bindProyExpandHandlers(div, pid){
   if(btnEd){(function(p){btnEd.addEventListener('click',function(ev){ev.stopPropagation();openProyectoModal(p);});})(pid);}
   // botón ver/ocultar completadas
   var btnComp2=div.querySelector('#pdet-btn-comp-'+pid);
-  if(btnComp2){(function(p,d){btnComp2.addEventListener('click',function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;d.innerHTML=renderProyExpand(p);bindProyExpandHandlers(d,p);});})(pid,div);}
+  if(btnComp2){(function(p,d){btnComp2.addEventListener('click',function(ev){
+    ev.stopPropagation();
+    verCompletadas=!verCompletadas;
+    var snap2=_capturarAbiertos();
+    d.innerHTML=renderProyExpand(p);
+    bindProyExpandHandlers(d,p);
+    window._abiertosSnapshot=snap2;
+    _reabrirAnidados('vw-'+curView);
+  });})(pid,div);}
   // bindear reuniones vinculadas
   var rEls2=div.querySelectorAll('[data-rid]');
   for(var rei=0;rei<rEls2.length;rei++){
