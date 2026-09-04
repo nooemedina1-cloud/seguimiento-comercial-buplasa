@@ -204,24 +204,8 @@ select:focus,input:focus{border-color:var(--primary);}
     <div class="mb">
       <div class="fg"><label>Descripcion</label><input type="text" id="et-tit" placeholder="Descripcion de la tarea"></div>
       <div class="fg"><label>Responsables</label><div id="et-resps" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;"><label style="display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer;"><input type="checkbox" value="v1" class="et-resp-cb" style="width: 14px; height: 14px;"><span class="av" style="background: rgb(238, 237, 254); color: rgb(60, 52, 137);">RP</span> Responsable Producto Buply</label><label style="display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer;"><input type="checkbox" value="v2" class="et-resp-cb" style="width: 14px; height: 14px;"><span class="av" style="background: rgb(225, 245, 238); color: rgb(8, 80, 65);">M</span> Maia</label><label style="display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer;"><input type="checkbox" value="v3" class="et-resp-cb" style="width: 14px; height: 14px;"><span class="av" style="background: rgb(250, 238, 218); color: rgb(99, 56, 6);">N</span> Noelia</label><label style="display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer;"><input type="checkbox" value="v1781100334405602" class="et-resp-cb" style="width: 14px; height: 14px;"><span class="av" style="background: rgb(250, 236, 231); color: rgb(113, 43, 19);">A</span> Alejandro</label></div></div>
-      <div class="fg"><label>Vencimiento</label><input type="date" id="et-vence"></div>
-      <div class="fg"><label>Estado</label>
-        <select id="et-estado">
-          <option value="pendiente">Pendiente</option>
-          <option value="en_proceso">En proceso</option>
-          <option value="completada">Completada</option>
-          <option value="incumplida">No cumplida</option>
-        </select>
-      </div>
-      <div class="fg show-motivo" id="et-mwrap"><label>Motivo</label><textarea id="et-motivo" placeholder="Por que no se completo..."></textarea></div>
-      <div class="fg"><label>Cliente vinculado</label><select id="et-cli" onchange="actualizarContactosCli(&#39;et-cli&#39;,&#39;et-clicontacto&#39;)"><option value="">— Sin cliente —</option><option value="c1781197122217">Ilko Task</option><option value="c1781202410029">PSA</option><option value="c1781271495054">Cook Master</option><option value="c1781625557713">Fravega</option><option value="c1781890654540">Cooperativa Obrera</option><option value="c1781890774043">La Anonima</option><option value="c1782135045759">Reteplast</option><option value="c1782135063664">Sodimac</option><option value="c1782135890075">Carrefour</option><option value="c1782481165751">Chango Mas</option><option value="c1782486255376">Quo Productos</option><option value="c1782489861532">BIASHOP</option><option value="c1782490367536">Coto</option><option value="c1782496768642">Easy</option><option value="c1782497204205">Full Regalos</option><option value="c1782501418925">Cannon</option><option value="c1782501597025">Chiaru</option><option value="c1782502248330">Buply</option><option value="c1782919018139" selected="">Jumbo</option><option value="c1782919209453">Krikos</option><option value="c1782922592325">Merchands</option><option value="c1782923062697">Supermercados Toledo</option><option value="c1782923107706">Farmacity / Simplicity</option><option value="c1782923143052">YPF</option><option value="c1782923338460">Almacor</option><option value="c1782923585908">Bidcom</option><option value="c1782930789530">Coppel</option><option value="c1783014042210">Jugueterías Cebra</option><option value="c1783014160877">Multipack</option><option value="c1783087168720">Supermercado La Gallega</option><option value="c1783101177181">Beruplast</option></select></div>
-      <div class="fg"><label>Contacto</label><select id="et-clicontacto"><option value="">— Sin contacto —</option><option value="Natalia Alvite">Natalia Alvite (Compradora Contenedores)</option><option value="Victoria Deferrari">Victoria Deferrari (Compradora accesorios (de Licencia))</option><option value="Micaela Cid Rojas">Micaela Cid Rojas (Compradora Contenedores)</option><option value="Aixa Ameztoy">Aixa Ameztoy (Compradora de Blanco)</option><option value="Miriam Rinaldi">Miriam Rinaldi (Decoración Nacional)</option><option value="Camila Milagros">Camila Milagros (Asistente de Natalia y Miriam Rinaldi)</option></select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="fg"><label>Proyecto vinculado</label><select id="et-proy"></select></div>
-        <div class="fg"><label>Fase</label><select id="et-fase"></select></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="fg"><label>Fecha inicio</label><input type="date" id="et-inicio"></div>
+        <div class="fg"><label>Vencimiento</label><input type="date" id="et-vence"></div>
         <div class="fg"><label>Prioridad</label>
           <select id="et-prioridad">
             <option value="urgente">Urgente</option>
@@ -231,6 +215,24 @@ select:focus,input:focus{border-color:var(--primary);}
           </select>
         </div>
       </div>
+      <button class="btn btn-sm" id="et-toggle-detalles" style="width:100%;margin-bottom:14px;">+ Más detalles (cliente, proyecto, notas...)</button>
+      <div id="et-detalles-wrap" style="display:none;">
+      <div class="fg"><label>Estado</label>
+        <select id="et-estado">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="completada">Completada</option>
+          <option value="incumplida">No cumplida</option>
+        </select>
+      </div>
+      <div class="fg show-motivo" id="et-mwrap"><label>Motivo</label><textarea id="et-motivo" placeholder="Por que no se completo..."></textarea></div>
+      <div class="fg"><label>Cliente vinculado</label><select id="et-cli" onchange="actualizarContactosCli('et-cli','et-clicontacto')"></select></div>
+      <div class="fg"><label>Contacto</label><select id="et-clicontacto"></select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="fg"><label>Proyecto vinculado</label><select id="et-proy"></select></div>
+        <div class="fg"><label>Fase</label><select id="et-fase"></select></div>
+      </div>
+      <div class="fg"><label>Fecha inicio</label><input type="date" id="et-inicio"></div>
       <div class="fg"><label>Notas</label><textarea id="et-notas" placeholder="Observaciones adicionales..."></textarea></div>
       <div class="fg" style="border-top:0.5px solid var(--border);padding-top:12px;margin-top:4px;">
         <label style="font-size:12px;font-weight:500;color:var(--text-2);display:block;margin-bottom:6px;">Subtareas <span id="et-sub-progreso" style="font-weight:400;"></span></label>
@@ -249,7 +251,8 @@ select:focus,input:focus{border-color:var(--primary);}
         </label>
       </div>
       <div class="fg" style="border-top:0.5px solid var(--border);padding-top:12px;margin-top:4px;">
-        <div id="et-novedades-wrap"><div class="sl" style="margin-bottom:6px;">Novedades (0)</div><div style="display:flex;gap:6px;margin-bottom:8px;"><input type="text" id="et-t-t17845604931894250-nov-txt" placeholder="Agregar novedad..." style="flex:1;border:0.5px solid var(--border-md);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;"><button class="btn btn-p btn-sm" id="et-t-t17845604931894250-nov-btn">Agregar</button></div><div style="font-size:13px;color:var(--text-2);">Sin novedades aún.</div></div>
+        <div id="et-novedades-wrap"></div>
+      </div>
       </div>
     </div>
     <div class="mf">
@@ -318,6 +321,8 @@ select:focus,input:focus{border-color:var(--primary);}
         <div class="fg"><label>Estado</label>
           <select id="cli-etapa">
             <option value="activo">Activo</option>
+            <option value="postergado">⏸ Postergado</option>
+            <option value="cancelado">✕ Cancelado</option>
             <option value="inactivo">Inactivo</option>
           </select>
         </div>
@@ -683,8 +688,8 @@ function mkProyOpts(selId){
 function tByCli(cid){return st.tareas.filter(function(t){return t.cliId===cid;});}
 function rByCli(cid){return st.reuniones.filter(function(r){return r.cliId===cid;});}
 function rByProy(pid){return st.reuniones.filter(function(r){return r.pId===pid;});}
-var ETAPAS_CLI=['activo','inactivo'];
-var ETAPAS_CLI_LBL={activo:'Activo',inactivo:'Inactivo'};
+var ETAPAS_CLI=['activo','postergado','cancelado','inactivo'];
+var ETAPAS_CLI_LBL={activo:'Activo',postergado:'Postergado',cancelado:'Cancelado',inactivo:'Inactivo'};
 var PRIORIDADES=['urgente','alta','normal','baja'];
 var PRIO_LBL={urgente:'Urgente',alta:'Alta',normal:'Normal',baja:'Baja'};
 var PRIO_ORD={urgente:0,alta:1,normal:2,baja:3};
@@ -694,11 +699,19 @@ function mkBadgePrio(p){
   var cls=pr==='urgente'?'b-in':(pr==='alta'?'b-pe':'b-do');
   return '<span class="badge '+cls+'" style="margin-left:4px;">'+PRIO_LBL[pr]+'</span>';
 }
-var ETAPAS_CLI_CLS={activo:'b-do',inactivo:'b-in'};
+var ETAPAS_CLI_CLS={activo:'b-do',postergado:'b-pe',cancelado:'b-in',inactivo:'b-in'};
 function mkBadgeCli(e){
-  // Migrar etapas viejas a activo
-  var estado=(['activo','inactivo'].indexOf(e)>=0)?e:'activo';
+  var estado=(ETAPAS_CLI.indexOf(e)>=0)?e:'activo';
   return '<span class="badge '+(ETAPAS_CLI_CLS[estado]||'b-do')+'">'+(ETAPAS_CLI_LBL[estado]||'Activo')+'</span>';
+}
+// Devuelve 'postergado'/'cancelado' si el cliente de la tarea está en pausa, o '' si está activo
+function clientePausado(cliId){
+  if(!cliId)return '';
+  var c=gC(cliId);
+  if(!c)return '';
+  if(c.etapa==='postergado')return 'postergado';
+  if(c.etapa==='cancelado')return 'cancelado';
+  return '';
 }
 function fmtValor(v){if(!v)return'—';return'$'+Number(v).toLocaleString();}
 function proyDeCliente(cid){
@@ -753,9 +766,15 @@ function inWeek(){var d=new Date();d.setDate(d.getDate()+7);return d.toISOString
 function fmtD(s){if(!s)return'--';var p=s.split('-');return p[2]+'/'+p[1];}
 function fmtDF(s){if(!s)return'--';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function isOv(t){if(t.est==='completada'||t.est==='incumplida')return false;return t.vence<today();}
-function effE(t){return isOv(t)?'incumplida':t.est;}
-function bCls(e){var m={pendiente:'b-pe',en_proceso:'b-pr',completada:'b-do',incumplida:'b-in'};return m[e]||'b-pe';}
-function bLbl(e){var m={pendiente:'Pendiente',en_proceso:'En proceso',completada:'Completada',incumplida:'No cumplida'};return m[e]||e;}
+function effE(t){
+  if(t.est!=='completada'){
+    var pausa=clientePausado(t.cliId);
+    if(pausa)return pausa==='cancelado'?'cancelada_cli':'postergada_cli';
+  }
+  return isOv(t)?'incumplida':t.est;
+}
+function bCls(e){var m={pendiente:'b-pe',en_proceso:'b-pr',completada:'b-do',incumplida:'b-in',postergada_cli:'b-pe',cancelada_cli:'b-in'};return m[e]||'b-pe';}
+function bLbl(e){var m={pendiente:'Pendiente',en_proceso:'En proceso',completada:'Completada',incumplida:'No cumplida',postergada_cli:'⏸ Postergado (cliente)',cancelada_cli:'✕ Cancelado (cliente)'};return m[e]||e;}
 function mkAv(v,lg){
   var i=gVi(v.id);var c=vColor(i);
   var cl='av'+(lg?' av-lg':'');
@@ -792,7 +811,7 @@ function stats(tareas){
     var t=tareas[i];
     if(t.est==='completada')done++;
     else if(t.est==='en_proceso')prog++;
-    if(t.est==='incumplida'||isOv(t))late++;
+    if(!clientePausado(t.cliId)&&(t.est==='incumplida'||isOv(t)))late++;
   }
   return{n:n,done:done,prog:prog,late:late,pct:n?Math.round(done/n*100):0};
 }
@@ -1201,13 +1220,13 @@ function renderDash(){
   // Datos base
   var pipeline=calcPipelineTotal(dashFV);
 
-  var tareasVencidas=st.tareas.filter(function(t){return t.est!=='completada'&&t.est!=='incumplida'&&t.vence<td;}).sort(function(a,b){return a.vence.localeCompare(b.vence);});
-  var tareasHoy=st.tareas.filter(function(t){return t.est!=='completada'&&t.est!=='incumplida'&&t.vence===td;}).sort(function(a,b){
+  var tareasVencidas=st.tareas.filter(function(t){return t.est!=='completada'&&t.est!=='incumplida'&&t.vence<td&&!clientePausado(t.cliId);}).sort(function(a,b){return a.vence.localeCompare(b.vence);});
+  var tareasHoy=st.tareas.filter(function(t){return t.est!=='completada'&&t.est!=='incumplida'&&t.vence===td&&!clientePausado(t.cliId);}).sort(function(a,b){
     var pa=PRIO_ORD[a.prioridad||'normal'];var pb=PRIO_ORD[b.prioridad||'normal'];
     if(pa!==pb)return pa-pb;
     return (a.vIds[0]||'').localeCompare(b.vIds[0]||'');
   });
-  var tareasSemana=st.tareas.filter(function(t){return t.est!=='completada'&&t.est!=='incumplida'&&t.vence>td&&t.vence<=en7;}).sort(function(a,b){return a.vence.localeCompare(b.vence);});
+  var tareasSemana=st.tareas.filter(function(t){return t.est!=='completada'&&t.est!=='incumplida'&&t.vence>td&&t.vence<=en7&&!clientePausado(t.cliId);}).sort(function(a,b){return a.vence.localeCompare(b.vence);});
   if(dashFV){
     tareasVencidas=tareasVencidas.filter(function(t){return (t.vIds||[]).indexOf(dashFV)>=0;});
     tareasHoy=tareasHoy.filter(function(t){return (t.vIds||[]).indexOf(dashFV)>=0;});
@@ -1241,7 +1260,10 @@ function renderDash(){
   // Header con fecha y KPIs compactos
   h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;">';
   h+='<div>';
+  h+='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">';
   h+='<div style="font-size:22px;font-weight:600;color:var(--text);">Buenos días 👋</div>';
+  h+='<button class="btn btn-p btn-sm" id="dash-btn-nueva-tarea">+ Tarea</button>';
+  h+='</div>';
   h+='<div style="font-size:13px;color:var(--text-2);margin-top:2px;">'+fechaLabel+'</div>';
   h+='<div style="margin-top:8px;"><select id="dash-fil-v" style="font-size:12px;">'+'<option value="">Todos los vendedores</option>'+mkVOpts(dashFV)+'</select></div>';
   h+='</div>';
@@ -1374,6 +1396,8 @@ function renderDash(){
   document.getElementById('vw-dashboard').innerHTML=h;
 
   bindQuickChecks('vw-dashboard',function(){renderDash();});
+  var dashBtnNT=document.getElementById('dash-btn-nueva-tarea');
+  if(dashBtnNT)dashBtnNT.addEventListener('click',function(){openEditTarea('__nuevo__');});
 
   var dashFilV=document.getElementById('dash-fil-v');
   if(dashFilV)dashFilV.addEventListener('change',function(){dashFV=this.value;renderDash();});
@@ -1508,7 +1532,8 @@ function renderTareasHTML(){
   var completadasOcultas=0;
   if(fE){
     if(fE==='incumplida')tareas=tareas.filter(function(t){return effE(t)==='incumplida';});
-    else tareas=tareas.filter(function(t){return t.est===fE&&!isOv(t);});
+    else if(fE==='pausados')tareas=tareas.filter(function(t){var e2=effE(t);return e2==='postergada_cli'||e2==='cancelada_cli';});
+    else tareas=tareas.filter(function(t){return t.est===fE&&!isOv(t)&&!clientePausado(t.cliId);});
   } else if(!verCompletadas){
     completadasOcultas=tareas.filter(function(t){return t.est==='completada';}).length;
     tareas=tareas.filter(function(t){return t.est!=='completada';});
@@ -1531,6 +1556,7 @@ function renderTareasHTML(){
   h+='<option value="en_proceso"'+(fE==='en_proceso'?' selected':'')+'>En proceso</option>';
   h+='<option value="completada"'+(fE==='completada'?' selected':'')+'>Completada</option>';
   h+='<option value="incumplida"'+(fE==='incumplida'?' selected':'')+'>No cumplida</option>';
+  h+='<option value="pausados"'+(fE==='pausados'?' selected':'')+'>⏸ Pausados (cliente)</option>';
   h+='</select>';
   h+='<select id="fil-p">';
   h+='<option value=""'+(fP===''?' selected':'')+'>Toda prioridad</option>';
@@ -1576,7 +1602,7 @@ function renderTareasKanban(){
   var tareas=[].concat(st.tareas);
   if(fV)tareas=tareas.filter(function(t){return (t.vIds||[]).indexOf(fV)>=0;});
   if(fP)tareas=tareas.filter(function(t){return (t.prioridad||'normal')===fP;});
-  var cols=[['pendiente','Pendiente'],['en_proceso','En proceso'],['incumplida','No cumplida'],['completada','Completada']];
+  var cols=[['pendiente','Pendiente'],['en_proceso','En proceso'],['incumplida','No cumplida'],['completada','Completada'],['__pausados__','⏸ Pausados (cliente)']];
   var h='<div class="filters"><span>Filtrar:</span>';
   h+='<select id="fil-v"><option value="">Todos los responsables</option>'+mkVOpts(fV)+'</select>';
   h+='<select id="fil-p">';
@@ -1590,7 +1616,9 @@ function renderTareasKanban(){
   h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;overflow-x:auto;">';
   for(var ci=0;ci<cols.length;ci++){
     var key=cols[ci][0];var lbl=cols[ci][1];
-    var colTareas=tareas.filter(function(t){return effE(t)===key;});
+    var colTareas=key==='__pausados__'
+      ?tareas.filter(function(t){var e2=effE(t);return e2==='postergada_cli'||e2==='cancelada_cli';})
+      :tareas.filter(function(t){return effE(t)===key;});
     colTareas.sort(function(a,b){return PRIO_ORD[a.prioridad||'normal']-PRIO_ORD[b.prioridad||'normal'];});
     var colTareasTotal=colTareas.length;
     var ocultasCol=0;
@@ -1642,6 +1670,7 @@ function bindKanbanDrag(){
       col.addEventListener('dragleave',function(){col.style.background='var(--bg)';});
       col.addEventListener('drop',function(e){
         e.preventDefault();col.style.background='var(--bg)';
+        if(col.dataset.est==='__pausados__'){alert('Esta columna se arma sola cuando el cliente está Postergado/Cancelado (Editar cliente → Estado). No se puede arrastrar una tarea acá directamente.');return;}
         var tid=e.dataTransfer.getData('text/plain');
         var t=st.tareas.find(function(x){return x.id===tid;});
         if(t){t.est=col.dataset.est;saveSt();renderActividad();}
@@ -2077,6 +2106,25 @@ function renderVendedores(){
         if(btnEd){(function(p){btnEd.onclick=function(ev){ev.stopPropagation();openProyectoModal(p);};})(pid);}
         var btnNT=panel.querySelector('[id^="pdet-btn-nueva-tarea-"]');
         if(btnNT){(function(p){btnNT.onclick=function(ev){ev.stopPropagation();openEditTareaConProy(p);};})(pid);}
+        // Botón + Agregar hito/cliente
+        var btnAddHitoEq=panel.querySelector('[id^="pdet-btn-addhito-"]');
+        if(btnAddHitoEq){(function(p,pn){btnAddHitoEq.onclick=function(ev){
+          ev.stopPropagation();
+          toggleAddHitoPicker(p,pn,function(){pn.innerHTML=renderProyExpand(p,vid);bindPanelContents();});
+        };})(pid,panel);}
+        // Botón dividir por hito
+        var btnSplitEq=panel.querySelector('[id^="pdet-btn-split-"]');
+        if(btnSplitEq){(function(p){btnSplitEq.onclick=function(ev){ev.stopPropagation();splitProyectoPorHito(p);};})(pid);}
+        // Botones + Agregar tarea a esta fase/cliente
+        var addTareaBtnsEq=panel.querySelectorAll('[data-addtarea-pid]');
+        for(var atiE=0;atiE<addTareaBtnsEq.length;atiE++){
+          (function(btn){
+            btn.onclick=function(ev){
+              ev.stopPropagation();
+              openEditTareaConProy(btn.dataset.addtareaPid,btn.dataset.addtareaFase||'',btn.dataset.addtareaCliid||'');
+            };
+          })(addTareaBtnsEq[atiE]);
+        }
         // Botón ver/ocultar completadas
         var btnComp3=panel.querySelector('[id^="pdet-btn-comp-"]');
         if(btnComp3){(function(p,vv){btnComp3.onclick=function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;panel.innerHTML=renderProyExpand(p,vv);bindPanelContents();};})(pid,vid);}
@@ -2399,6 +2447,7 @@ function renderClientes(){
 function renderCliProyPanel(cid,pid){
   var p=gP(pid);var c=gC(cid);
   if(!p||!c)return '';
+  var clEntry=gCliEnProy(p,cid,c.nombre);
   var allTFull=tByP(pid).filter(function(t){
     if(t.cliId===cid)return true;
     if(t.cliId){var tc=gC(t.cliId);if(tc&&tc.nombre===c.nombre)return true;}
@@ -2409,9 +2458,11 @@ function renderCliProyPanel(cid,pid){
   var h='<div style="background:var(--bg);border-radius:var(--r-lg);border:1px solid var(--primary);overflow:hidden;">';
   h+='<div style="padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">';
   h+='<span style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;">Tareas de '+c.nombre+' en '+p.nombre+'</span>';
+  if(clEntry&&clEntry.resultado)h+=mkResultadoBadge(clEntry.resultado);
   if(verCompletadas&&completadasCP.length)h+='<button class="btn btn-sm" id="cliproy-btn-comp">▲ Ocultar completadas</button>';
   else if(!verCompletadas&&completadasCP.length)h+='<button class="btn btn-sm" id="cliproy-btn-comp">Ver completadas ('+completadasCP.length+')</button>';
   h+='</div>';
+  if(clEntry&&clEntry.notas)h+='<div style="padding:8px 12px;font-size:12px;color:var(--text-2);background:var(--warn-bg);border-bottom:0.5px solid var(--border);">📝 '+clEntry.notas+'</div>';
   if(!allT.length){
     h+='<div style="padding:4px 12px 10px;font-size:13px;color:var(--text-2);">'+(allTFull.length?'Todas completadas 🎉':'Sin tareas todavía.')+'</div>';
   } else {
@@ -2446,11 +2497,13 @@ function renderListaCli(){
   var clis=[].concat(st.clientes).sort(function(a,b){return a.nombre.localeCompare(b.nombre);});
   var etapaFiltro=cliEstFiltro||'';
   var tipoFiltro=cliTipoFiltro||'';
-  if(etapaFiltro){clis=clis.filter(function(c){return (['activo','inactivo'].indexOf(c.etapa)>=0?c.etapa:'activo')===etapaFiltro;});}
+  if(etapaFiltro){clis=clis.filter(function(c){return (ETAPAS_CLI.indexOf(c.etapa)>=0?c.etapa:'activo')===etapaFiltro;});}
   if(tipoFiltro){clis=clis.filter(function(c){return (c.tipo==='proveedor'?'proveedor':'cliente')===tipoFiltro;});}
   var cntCli=st.clientes.filter(function(c){return c.tipo!=='proveedor';}).length;
   var cntProv=st.clientes.filter(function(c){return c.tipo==='proveedor';}).length;
-  var cntAct=st.clientes.filter(function(c){return (['activo','inactivo'].indexOf(c.etapa)>=0?c.etapa:'activo')==='activo';}).length;
+  var cntAct=st.clientes.filter(function(c){return (ETAPAS_CLI.indexOf(c.etapa)>=0?c.etapa:'activo')==='activo';}).length;
+  var cntPost=st.clientes.filter(function(c){return c.etapa==='postergado';}).length;
+  var cntCanc=st.clientes.filter(function(c){return c.etapa==='cancelado';}).length;
   var cntInact=st.clientes.filter(function(c){return c.etapa==='inactivo';}).length;
   var h='<div class="filters" style="margin-bottom:12px;flex-wrap:wrap;align-items:center;">';
   h+='<button class="btn btn-sm'+(tipoFiltro===''?' btn-p':'')+'" data-clitipofilt="">Todos ('+st.clientes.length+')</button>';
@@ -2459,6 +2512,8 @@ function renderListaCli(){
   h+='<span style="width:1px;height:20px;background:var(--border-md);margin:0 4px;"></span>';
   h+='<button class="btn btn-sm'+(etapaFiltro===''?' btn-p':'')+'" data-cliestfilt="">Todos los estados</button>';
   h+='<button class="btn btn-sm'+(etapaFiltro==='activo'?' btn-p':'')+'" data-cliestfilt="activo">Activo ('+cntAct+')</button>';
+  if(cntPost)h+='<button class="btn btn-sm'+(etapaFiltro==='postergado'?' btn-p':'')+'" data-cliestfilt="postergado">⏸ Postergado ('+cntPost+')</button>';
+  if(cntCanc)h+='<button class="btn btn-sm'+(etapaFiltro==='cancelado'?' btn-p':'')+'" data-cliestfilt="cancelado">✕ Cancelado ('+cntCanc+')</button>';
   if(cntInact)h+='<button class="btn btn-sm'+(etapaFiltro==='inactivo'?' btn-p':'')+'" data-cliestfilt="inactivo">Inactivo ('+cntInact+')</button>';
   h+='</div>';
 
@@ -2687,7 +2742,7 @@ function openClienteModal(cid){
     rDiv.appendChild(lbl);
   }
   var _etapaVal=c?c.etapa:'activo';
-  if(['activo','inactivo'].indexOf(_etapaVal)<0)_etapaVal='activo'; // migrar valores viejos
+  if(ETAPAS_CLI.indexOf(_etapaVal)<0)_etapaVal='activo'; // migrar valores viejos
   document.getElementById('cli-etapa').value=_etapaVal;
   document.getElementById('cli-inicio').value=c?c.inicio||'':'';
   document.getElementById('cli-notas').value=c?c.notas:'';
@@ -3218,6 +3273,113 @@ function proyValorPonderado(p){
   return total;
 }
 
+function toggleAddHitoPicker(pid, container, refreshFn){
+  var p=gP(pid);if(!p)return;
+  var wrap=container.querySelector('#pdet-addhito-wrap-'+pid);
+  if(!wrap)return;
+  var isOpen=wrap.style.display!=='none';
+  if(isOpen){wrap.style.display='none';wrap.innerHTML='';return;}
+  wrap.style.display='block';
+  if(p.tipo==='comercial'){
+    wrap.innerHTML='<div style="display:flex;gap:6px;align-items:center;background:var(--bg);padding:8px;border-radius:var(--r);flex-wrap:wrap;"><select id="pdet-newcli-sel-'+pid+'" style="flex:1;min-width:140px;border:0.5px solid var(--border-md);border-radius:var(--r);padding:6px 8px;font-size:13px;">'+mkCliOpts('')+'</select><button class="btn btn-sm btn-p" id="pdet-newcli-add-'+pid+'">Agregar</button><button class="btn btn-sm" id="pdet-newcli-cancel-'+pid+'">Cancelar</button></div>';
+    var sel=wrap.querySelector('#pdet-newcli-sel-'+pid);
+    if(sel&&sel.options[0])sel.options[0].textContent='— Elegir cliente —';
+    wrap.querySelector('#pdet-newcli-add-'+pid).addEventListener('click',function(){
+      var cid=sel.value;if(!cid)return;
+      var c=gC(cid);if(!c)return;
+      p.clientes=p.clientes||[];
+      var yaExiste=p.clientes.some(function(cl){return cl._cid===cid||cl.nombre===c.nombre;});
+      if(yaExiste){alert('Ese cliente ya está en este proyecto.');return;}
+      p.clientes.push({nombre:c.nombre,_cid:cid,fase:'',contacto:'',estado:'prospecto',valor:0,prob:0,resultado:'',notas:'',novedades:[]});
+      saveSt();
+      refreshFn();
+    });
+    wrap.querySelector('#pdet-newcli-cancel-'+pid).addEventListener('click',function(){wrap.style.display='none';wrap.innerHTML='';});
+  } else {
+    wrap.innerHTML='<div style="display:flex;gap:6px;align-items:center;background:var(--bg);padding:8px;border-radius:var(--r);flex-wrap:wrap;"><input type="text" id="pdet-newfase-inp-'+pid+'" placeholder="Nombre del hito/fase..." style="flex:1;min-width:140px;border:0.5px solid var(--border-md);border-radius:var(--r);padding:6px 8px;font-size:13px;"><button class="btn btn-sm btn-p" id="pdet-newfase-add-'+pid+'">Agregar</button><button class="btn btn-sm" id="pdet-newfase-cancel-'+pid+'">Cancelar</button></div>';
+    var inp=wrap.querySelector('#pdet-newfase-inp-'+pid);
+    inp.focus();
+    function confirmAdd(){
+      var val=inp.value.trim();if(!val)return;
+      p.fases=p.fases||[];
+      if(p.fases.indexOf(val)>=0){alert('Ya existe un hito con ese nombre.');return;}
+      p.fases.push(val);
+      saveSt();
+      refreshFn();
+    }
+    wrap.querySelector('#pdet-newfase-add-'+pid).addEventListener('click',confirmAdd);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();confirmAdd();}});
+    wrap.querySelector('#pdet-newfase-cancel-'+pid).addEventListener('click',function(){wrap.style.display='none';wrap.innerHTML='';});
+  }
+}
+function splitProyectoPorHito(pid){
+  var p=gP(pid);if(!p)return;
+  if(p.tipo!=='comercial'){alert('Esto solo aplica a proyectos tipo Cuenta/Comercial.');return;}
+  var clis=p.clientes||[];
+  var faseGroups={};var faseOrder=[];
+  for(var i=0;i<clis.length;i++){
+    var cl=clis[i];
+    if(!cl.fase)continue;
+    if(!faseGroups[cl.fase]){faseGroups[cl.fase]=[];faseOrder.push(cl.fase);}
+    faseGroups[cl.fase].push(cl);
+  }
+  if(!faseOrder.length){alert('Este proyecto no tiene clientes con "Fase" cargada — no hay nada para dividir.');return;}
+
+  // Detectar clientes que aparecen en más de un hito: hoy sus tareas no se pueden repartir sin ambigüedad
+  // (una tarea se vincula al cliente por cliId, no a "cuál aparición" del cliente en qué hito)
+  var conteoNombre={};
+  clis.forEach(function(cl){if(cl.fase)conteoNombre[cl.nombre]=(conteoNombre[cl.nombre]||0)+1;});
+  var nombresAmbiguos=Object.keys(conteoNombre).filter(function(n){return conteoNombre[n]>1;});
+
+  var resumen='Esto va a crear '+faseOrder.length+' proyecto(s) nuevo(s), uno por cada hito:\n\n';
+  faseOrder.forEach(function(fk){resumen+='• '+fk+' ('+faseGroups[fk].length+' cliente'+(faseGroups[fk].length!==1?'s':'')+')\n';});
+  var sinFase=clis.filter(function(c){return !c.fase;}).length;
+  resumen+='\nLos clientes sin fase ('+sinFase+') se quedan en "'+p.nombre+'".\n';
+  if(nombresAmbiguos.length){
+    resumen+='\n⚠️ OJO: estos clientes aparecen en más de un hito — '+nombresAmbiguos.join(', ')+'.\nHoy no hay forma de saber qué tarea es de cuál hito (ambas apariciones comparten las mismas tareas). Por seguridad, NO los voy a mover automáticamente — se quedan en "'+p.nombre+'" tal cual están, y los movés vos a mano revisando tarea por tarea.\n';
+  }
+  resumen+='\n¿Confirmar la división de los hitos SIN ambigüedad?';
+  if(!confirm(resumen))return;
+
+  var nuevosCreados=[];
+  faseOrder.forEach(function(fk){
+    var grupo=faseGroups[fk].filter(function(cl){return nombresAmbiguos.indexOf(cl.nombre)<0;});
+    if(!grupo.length)return;
+    var nId='pj'+Date.now()+Math.floor(Math.random()*99999);
+    var nuevoP={id:nId,nombre:fk,desc:'',respId:p.respId,inicio:today(),resultado:'',tipo:'comercial',categoria:'cuenta',clientes:[],fases:[],novedades:[],tIds:[]};
+    grupo.forEach(function(cl){
+      // Mover tareas asociadas a este cliente dentro del proyecto viejo
+      var tareasCli=st.tareas.filter(function(t){
+        if(t.pId!==p.id&&(p.tIds||[]).indexOf(t.id)<0)return false;
+        if(cl._cid&&t.cliId===cl._cid)return true;
+        if(t.cliId){var tc=gC(t.cliId);if(tc&&tc.nombre===cl.nombre)return true;}
+        return false;
+      });
+      tareasCli.forEach(function(t){
+        t.pId=nId;
+        nuevoP.tIds.push(t.id);
+        var idxOld=(p.tIds||[]).indexOf(t.id);
+        if(idxOld>=0)p.tIds.splice(idxOld,1);
+      });
+      // Copiar el cliente al nuevo proyecto, limpiando la fase (ya es el nombre del proyecto)
+      nuevoP.clientes.push({nombre:cl.nombre,_cid:cl._cid||'',fase:'',contacto:cl.contacto||'',estado:cl.estado||'prospecto',valor:cl.valor||0,prob:cl.prob||0,resultado:cl.resultado||'',notas:cl.notas||'',novedades:cl.novedades||[]});
+    });
+    st.proyectos.push(nuevoP);
+    nuevosCreados.push(fk);
+    // Sacar estos clientes del proyecto viejo (solo los movidos, no los ambiguos)
+    p.clientes=p.clientes.filter(function(c){return grupo.indexOf(c)<0;});
+  });
+  var quedaVacio=(p.clientes||[]).length===0&&tByP(p.id).length===0;
+  if(quedaVacio){
+    st.proyectos=st.proyectos.filter(function(pp){return pp.id!==p.id;});
+  }
+  saveSt();
+  var msgFinal='Listo. Se crearon: '+(nuevosCreados.length?nuevosCreados.join(', '):'(ninguno, todo era ambiguo)')+'.\n\n';
+  msgFinal+=quedaVacio?'"'+p.nombre+'" quedó vacío y se eliminó.':'"'+p.nombre+'" sigue existiendo con lo que no se movió.';
+  if(nombresAmbiguos.length)msgFinal+='\n\nRecordá revisar a mano: '+nombresAmbiguos.join(', ');
+  alert(msgFinal);
+  renderAndRestore();
+}
 function renderProyExpand(pid,filtroVId){
   var p=gP(pid);if(!p)return '';
   var ts=tByP(pid);
@@ -3246,11 +3408,13 @@ function renderProyExpand(pid,filtroVId){
   h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">';
   h+='<button class="btn btn-sm" id="pdet-btn-edit-'+pid+'">✏️ Editar proyecto</button>';
   h+='<button class="btn btn-sm btn-p" id="pdet-btn-nueva-tarea-'+pid+'">+ Nueva tarea</button>';
+  h+='<button class="btn btn-sm" id="pdet-btn-addhito-'+pid+'">'+(p.tipo==='comercial'?'+ Agregar cliente':'+ Agregar hito')+'</button>';
+  if(p.tipo==='comercial'&&(p.clientes||[]).some(function(c){return !!c.fase;}))h+='<button class="btn btn-sm" id="pdet-btn-split-'+pid+'">🔀 Dividir por hito en proyectos separados</button>';
   if(verCompletadas)h+='<button class="btn btn-sm" id="pdet-btn-comp-'+pid+'">▲ Ocultar completadas</button>';
   else if(compOcultoExpand>0)h+='<button class="btn btn-sm" id="pdet-btn-comp-'+pid+'">Ver completadas ('+compOcultoExpand+')</button>';
   // resultado se muestra por cliente
   h+='</div>';
-  // Bifurcar por tipo de proyecto
+  h+='<div id="pdet-addhito-wrap-'+pid+'" style="display:none;margin-bottom:12px;"></div>';
   if(p.tipo==='comercial'){
     // VISTA COMERCIAL: clientes expandibles con sus tareas
     // Si hay filtro de vendedor, mostrar solo clientes con tareas de ese vendedor
@@ -3293,6 +3457,7 @@ function renderProyExpand(pid,filtroVId){
           h+='<div style="font-size:11px;color:var(--text-2);margin-right:8px;">'+fmtD(t.vence)+'</div>';
           h+=mkBadge(e)+'</div>';
         }}
+        h+='<div style="padding:8px 12px;"><button class="btn btn-sm" data-addtarea-pid="'+pid+'" data-addtarea-cliid="'+(cl._cid||'')+'" style="width:100%;">+ Agregar tarea a '+cl.nombre+'</button></div>';
         h+='<div style="border-top:0.5px solid var(--border);padding:10px 12px;">';
         h+=mkNovHTML(cl.novedades||[],clNovId);
         h+='</div></div></div>';
@@ -3366,6 +3531,7 @@ function renderProyExpand(pid,filtroVId){
     } else if(!faseClis.length){
       h+='<div style="font-size:13px;color:var(--text-2);padding:6px 0;">Sin tareas.</div>';
     }
+    h+='<button class="btn btn-sm" data-addtarea-pid="'+pid+'" data-addtarea-fase="'+(faseKey==='__sin_fase__'?'':faseKey)+'" style="width:100%;margin-top:6px;">+ Agregar tarea a esta fase</button>';
 
     // Clientes de esta fase (expandibles)
     if(faseClis.length){
@@ -4415,6 +4581,9 @@ function openEditTarea(id){
     renderTareaAdjs([]);
     bindTareaAdjInput();
     toggleMotivo();
+    var wrapNew=document.getElementById('et-detalles-wrap');
+    wrapNew.style.display='none';
+    document.getElementById('et-toggle-detalles').textContent='+ Más detalles (cliente, proyecto, notas...)';
     openOv('ov-tarea');
     return;
   }
@@ -4458,6 +4627,10 @@ function openEditTarea(id){
   var etNovWrap=document.getElementById('et-novedades-wrap');
   if(etNovWrap){etNovWrap.innerHTML=mkNovHTML(t.novedades||[],'et-t-'+t.id);}
   toggleMotivo();
+  var tieneDetalle=!!(t.cliId||t.pId||t.fase||t.notas||t.inicio||(t.est&&t.est!=='pendiente')||(t.subtareas&&t.subtareas.length)||(t.adjuntos&&t.adjuntos.length)||(t.novedades&&t.novedades.length));
+  var wrapEd=document.getElementById('et-detalles-wrap');
+  wrapEd.style.display=tieneDetalle?'block':'none';
+  document.getElementById('et-toggle-detalles').textContent=tieneDetalle?'▲ Ocultar detalles':'+ Más detalles (cliente, proyecto, notas...)';
   openOv('ov-tarea');
   // Bindear novedades de tarea
   if(etNovWrap){
@@ -4503,13 +4676,16 @@ function toggleMotivo(){
 }
 var _tareaOrigen=null; // {tipo:'cli'|'proy', id:'...'} para volver después de guardar
 
-function openEditTareaConProy(pId){
+function openEditTareaConProy(pId,presetFase,presetCliId){
   _tareaOrigen={tipo:'proy',id:pId};
   openEditTarea('__nuevo__');
+  var wrapP=document.getElementById('et-detalles-wrap');
+  wrapP.style.display='block';
+  document.getElementById('et-toggle-detalles').textContent='▲ Ocultar detalles';
   // Preseleccionar el proyecto y sus fases
   setTimeout(function(){
     fillEtProyOpts(pId);
-    loadEtFases(pId,'');
+    loadEtFases(pId,presetFase||'');
   },40);
   // Marcar el select de cliente con opción "General del proyecto"
   setTimeout(function(){
@@ -4517,10 +4693,11 @@ function openEditTareaConProy(pId){
     if(sel&&sel.options[0]){
       sel.options[0].textContent='— General del proyecto —';
     }
-    // Pre-seleccionar cliente del proyecto y cargar sus contactos
+    // Pre-seleccionar cliente: el pasado por parámetro, o si no el del proyecto
     var p=gP(pId);
-    if(p&&p.cliId){
-      if(sel)sel.value=p.cliId;
+    var cliParaPreset=presetCliId||(p?p.cliId:'');
+    if(cliParaPreset){
+      if(sel)sel.value=cliParaPreset;
       actualizarContactosCli('et-cli','et-clicontacto');
     }
   },60);
@@ -4539,6 +4716,9 @@ function openEditTareaConProy(pId){
 function openEditTareaConCli(cliId){
   _tareaOrigen={tipo:'cli',id:cliId};
   openEditTarea('__nuevo__');
+  var wrapC=document.getElementById('et-detalles-wrap');
+  wrapC.style.display='block';
+  document.getElementById('et-toggle-detalles').textContent='▲ Ocultar detalles';
   // Pre-seleccionar el cliente
   setTimeout(function(){
     var sel=document.getElementById('et-cli');
@@ -5344,6 +5524,12 @@ document.getElementById('ov-t-cancel').addEventListener('click',function(){_tare
 document.getElementById('ov-t-save').addEventListener('click',saveEditTarea);
 document.getElementById('btn-del-tarea').addEventListener('click',delTarea);
 document.getElementById('et-estado').addEventListener('change',toggleMotivo);
+document.getElementById('et-toggle-detalles').addEventListener('click',function(){
+  var wrap=document.getElementById('et-detalles-wrap');
+  var open=wrap.style.display!=='none';
+  wrap.style.display=open?'none':'block';
+  this.textContent=open?'+ Más detalles (cliente, proyecto, notas...)':'▲ Ocultar detalles';
+});
 document.getElementById('ov-d-x').addEventListener('click',function(){closeOv('ov-detalle');});
 document.getElementById('btn-edit-reunion').addEventListener('click',function(){closeOv('ov-detalle');openReunionModal(detReunionId);});
 document.getElementById('btn-del-reunion').addEventListener('click',function(){delReunion(detReunionId);});
@@ -5600,6 +5786,34 @@ function bindProyExpandHandlers(div, pid){
   // botón nueva tarea
   var btnNT=div.querySelector('#pdet-btn-nueva-tarea-'+pid);
   if(btnNT){(function(p){btnNT.addEventListener('click',function(ev){ev.stopPropagation();openEditTareaConProy(p);});})(pid);}
+  // botón + Agregar hito/cliente
+  var btnAddHito=div.querySelector('#pdet-btn-addhito-'+pid);
+  if(btnAddHito){(function(p,d){btnAddHito.addEventListener('click',function(ev){
+    ev.stopPropagation();
+    toggleAddHitoPicker(p,d,function(){
+      var snap3=_capturarAbiertos();
+      d.innerHTML=renderProyExpand(p);
+      bindProyExpandHandlers(d,p);
+      window._abiertosSnapshot=snap3;
+      _reabrirAnidados('vw-'+curView);
+    });
+  });})(pid,div);}
+  // botón dividir por hito
+  var btnSplit=div.querySelector('#pdet-btn-split-'+pid);
+  if(btnSplit){(function(p){btnSplit.addEventListener('click',function(ev){ev.stopPropagation();splitProyectoPorHito(p);});})(pid);}
+  // botones + Agregar tarea a esta fase/cliente
+  var addTareaBtns=div.querySelectorAll('[data-addtarea-pid]');
+  for(var ati=0;ati<addTareaBtns.length;ati++){
+    (function(btn){
+      btn.addEventListener('click',function(ev){
+        ev.stopPropagation();
+        var bp=btn.dataset.addtareaPid;
+        var bf=btn.dataset.addtareaFase||'';
+        var bc=btn.dataset.addtareaCliid||'';
+        openEditTareaConProy(bp,bf,bc);
+      });
+    })(addTareaBtns[ati]);
+  }
   // botón editar
   var btnEd=div.querySelector('#pdet-btn-edit-'+pid);
   if(btnEd){(function(p){btnEd.addEventListener('click',function(ev){ev.stopPropagation();openProyectoModal(p);});})(pid);}
