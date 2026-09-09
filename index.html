@@ -2006,12 +2006,62 @@ function renderVendedores(){
     h+='<span class="vend-arrow" style="font-size:14px;color:var(--text-2);">▼</span>';
     h+='</div>';
     h+='</div>';
-    // Contenido colapsable: lista plana de pendientes de esta persona
+    // Contenido colapsable
     h+='<div id="'+vExpandId+'" style="display:none;border-top:0.5px solid var(--border);padding:14px 16px;">';
     h+='<div class="vend-toolbar" style="display:flex;gap:6px;margin-bottom:12px;">';
     h+='<button class="btn btn-sm" data-vfilt="'+v.id+'">Ver todas las tareas</button>';
     h+='<button class="btn btn-sm" data-vlink="'+v.id+'">🔗 Ver tareas</button>';
     h+='</div>';
+
+    // Vista por proyectos (con botones + Agregar hito/cliente, + Nueva tarea, Dividir por hito, etc.)
+    var vProys=st.proyectos.filter(function(pf){
+      if(pf.respId===v.id){
+        var pts=tByP(pf.id);
+        return pts.length>0||(pf.clientes&&pf.clientes.length>0);
+      }
+      var pts2=tByP(pf.id);
+      return pts2.some(function(t){var vids=t.vIds||[];return vids.length>0&&vids.indexOf(v.id)>=0;});
+    });
+    var vPropios=vProys.filter(function(pf){return pf.respId===v.id;});
+    var vColab=vProys.filter(function(pf){return pf.respId!==v.id;});
+    function renderEqProyLista(lista){
+      var hh='';
+      for(var j=0;j<lista.length;j++){
+        var pj=lista[j];
+        var ptasks=tByP(pj.id).filter(function(t){return (t.vIds||[]).indexOf(v.id)>=0;});
+        var ps=stats(ptasks);var pclis=pj.clientes||[];
+        var pond=proyValorPonderado(pj);
+        var eqExpandId='eq-proy-expand-'+v.id+'-'+pj.id;
+        hh+='<div id="vc-eq-proy-'+v.id+'-'+pj.id+'" style="border:0.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;">';
+        hh+='<div class="eq-proy-hdr" data-eqpid="'+pj.id+'" data-eqvid="'+v.id+'" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;cursor:pointer;background:var(--bg);">';
+        hh+='<div><div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;">'+CATEGORIA_LBL[pCategoria(pj)]+' '+pj.nombre+(pj.respId!==v.id?'<span style="font-size:10.5px;font-weight:500;color:#712B13;background:#F5C4B3;padding:2px 8px;border-radius:20px;">Colaboración</span>':'')+'</div>';
+        if(pj.respId!==v.id)hh+='<div style="font-size:11px;color:var(--text-2);">Responsable: '+gV(pj.respId).nombre+'</div>';
+        if(pclis.length)hh+='<div style="font-size:11px;color:var(--text-2);">'+pclis.map(function(cl){return cl.nombre;}).join(' · ')+'</div>';
+        hh+='</div>';
+        hh+='<div style="display:flex;align-items:center;gap:8px;">';
+        hh+='<span style="font-size:11px;color:var(--text-2);">'+ptasks.length+' tarea'+(ptasks.length!==1?'s':'')+'</span>';
+        hh+='<span style="font-size:11px;color:var(--ok);">'+ps.done+' ✓</span>';
+        if(pond>0)hh+='<span style="font-size:11px;color:var(--text-2);">$'+Math.round(pond).toLocaleString()+'</span>';
+        hh+='<span class="eq-proy-arrow" style="font-size:12px;color:var(--text-2);">▼</span>';
+        hh+='</div></div>';
+        hh+='<div id="'+eqExpandId+'" style="display:none;padding:12px;border-top:0.5px solid var(--border);">'+renderProyExpand(pj.id,v.id)+'</div>';
+        hh+='</div>';
+      }
+      return hh;
+    }
+    if(vProys.length){
+      h+='<div class="sl">Proyectos</div>';
+      if(vPropios.length){
+        h+='<div class="sl" style="margin-top:6px;">Mis proyectos ('+vPropios.length+')</div>';
+        h+=renderEqProyLista(vPropios);
+      }
+      if(vColab.length){
+        h+='<div class="sl" style="margin-top:'+(vPropios.length?'12':'6')+'px;">Colaboraciones ('+vColab.length+')</div>';
+        h+=renderEqProyLista(vColab);
+      }
+    }
+
+    h+='<div class="sl" style="border-top:0.5px solid var(--border);margin-top:14px;padding-top:12px;">Pendientes</div>';
     h+='<div id="eq-pend-wrap-'+v.id+'">'+renderEqPendientes(v.id)+'</div>';
     h+='</div>'; // cierre contenido colapsable
     h+='</div>'; // cierre .vc
@@ -2828,7 +2878,7 @@ function saveCliente(){
 function delCliente(cid){
   if(!confirm('Eliminar este cliente?'))return;
   st.clientes=st.clientes.filter(function(c){return c.id!==cid;});
-  saveSt();closeOv('ov-cliente');closeOv('ov-clidet');render(curView);
+  saveSt();closeOv('ov-cliente');closeOv('ov-clidet');renderAndRestore();
 }
 
 function _capturarAbiertosCliFicha(bodyId){
@@ -4400,7 +4450,7 @@ function saveProyecto(){
     }
     st.proyectos.push({id:pId,nombre:nombre,desc:desc,respId:respId,inicio:inicio,resultado:resultado,tipo:tipo,categoria:categoria,clientes:clis,fases:fasesNombres||[],novedades:[],tIds:tIds});
   }
-  saveSt();closeOv('ov-proyecto');closeOv('ov-pdet');render(curView);
+  saveSt();closeOv('ov-proyecto');closeOv('ov-pdet');renderAndRestore();
 }
 
 
@@ -4409,7 +4459,7 @@ function delProyecto(pid){
   var p=gP(pid);
   if(p){var ids=p.tIds||[];st.tareas=st.tareas.filter(function(t){return ids.indexOf(t.id)<0;});}
   st.proyectos=st.proyectos.filter(function(x){return x.id!==pid;});
-  saveSt();closeOv('ov-pdet');closeOv('ov-proyecto');render(curView);
+  saveSt();closeOv('ov-pdet');closeOv('ov-proyecto');renderAndRestore();
 }
 
 function bindTRows(cid){
@@ -4758,7 +4808,10 @@ function saveEditTarea(){
     var origen=_tareaOrigen;_tareaOrigen=null;
     closeOv('ov-tarea');
     if(origen&&origen.tipo==='cli'){setTimeout(function(){openDetalleCliente(origen.id);},100);}
-    else if(origen&&origen.tipo==='proy'){_lastOpenPid=origen.id;nav('proyectos');}
+    else if(origen&&origen.tipo==='proy'){
+      if(curView==='vendedores'){renderAndRestore();}
+      else{_lastOpenPid=origen.id;nav('proyectos');}
+    }
     else{render(curView);}
     return;
   }
@@ -4795,17 +4848,26 @@ function delTarea(){
 function _capturarAbiertos(){
   // Genérico: guarda qué fases/clientes de proyecto estaban abiertos (Proyectos y Vendedores comparten renderProyExpand)
   var cont=document.getElementById('vw-'+curView);
-  var out={nested:[],eq:[]};
+  var out={nested:[],eq:[],vend:[]};
   if(!cont)return out;
   var nEls=cont.querySelectorAll('[id^="fase-expand-"],[id^="proy-cli-expand-"]');
   for(var i=0;i<nEls.length;i++){if(nEls[i].style.display==='block')out.nested.push(nEls[i].id);}
   var eEls=cont.querySelectorAll('[id^="eq-proy-expand-"]');
   for(var j=0;j<eEls.length;j++){if(eEls[j].style.display==='block')out.eq.push(eEls[j].id);}
+  var vEls=cont.querySelectorAll('[id^="vend-expand-"]');
+  for(var k=0;k<vEls.length;k++){if(vEls[k].style.display!=='none')out.vend.push(vEls[k].id);}
   return out;
 }
 function _reabrirAnidados(scopeId){
   var cont=document.getElementById(scopeId);
   if(!cont||!window._abiertosSnapshot)return;
+  (window._abiertosSnapshot.vend||[]).forEach(function(id){
+    var el=cont.querySelector('#'+CSS.escape(id));
+    if(!el)return;
+    el.style.display='block';
+    var hdr=cont.querySelector('[data-vendexpand="'+id+'"]');
+    if(hdr){var varr=hdr.querySelector('.vend-arrow');if(varr)varr.textContent='▲';}
+  });
   window._abiertosSnapshot.nested.forEach(function(id){
     var el=cont.querySelector('#'+CSS.escape(id));
     if(!el)return;
@@ -5136,7 +5198,7 @@ function saveReunion(){
     }
     st.reuniones.push({id:rId,titulo:titulo,fecha:fecha,temas:temas,participantes:partic,cliId:cliId,pId:pIdReunion,novedades:[],adjuntos:openReunionModal._adjuntos||[],tIds:tIds});
   }
-  saveSt();closeOv('ov-reunion');closeOv('ov-detalle');render(curView);
+  saveSt();closeOv('ov-reunion');closeOv('ov-detalle');renderAndRestore();
 }
 
 // DETALLE
@@ -5261,7 +5323,7 @@ function delReunion(rid){
   var r=gR(rid);
   if(r){var ids=r.tIds||[];st.tareas=st.tareas.filter(function(t){return ids.indexOf(t.id)<0;});}
   st.reuniones=st.reuniones.filter(function(x){return x.id!==rid;});
-  saveSt();closeOv('ov-detalle');closeOv('ov-reunion');render(curView);
+  saveSt();closeOv('ov-detalle');closeOv('ov-reunion');renderAndRestore();
 }
 
 // EQUIPO
@@ -5355,7 +5417,7 @@ function saveEquipo(){
     }
   }
   if(nuevos.length)st.vendedores=nuevos;
-  saveSt();closeOv('ov-equipo');render(curView);
+  saveSt();closeOv('ov-equipo');renderAndRestore();
 }
 
 // RESUMEN SEMANAL
