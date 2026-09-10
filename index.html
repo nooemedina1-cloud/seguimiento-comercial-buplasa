@@ -761,8 +761,14 @@ function mkAvs(vIds){
 }
 function firstVId(t){return t.vIds&&t.vIds.length?t.vIds[0]:'';}
 function firstV(t){return gV(firstVId(t));}
-function today(){return new Date().toISOString().slice(0,10);}
-function inWeek(){var d=new Date();d.setDate(d.getDate()+7);return d.toISOString().slice(0,10);}
+function fechaLocalISO(d){
+  var y=d.getFullYear();
+  var m=String(d.getMonth()+1).padStart(2,'0');
+  var dd=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dd;
+}
+function today(){return fechaLocalISO(new Date());}
+function inWeek(){var d=new Date();d.setDate(d.getDate()+7);return fechaLocalISO(d);}
 function fmtD(s){if(!s)return'--';var p=s.split('-');return p[2]+'/'+p[1];}
 function fmtDF(s){if(!s)return'--';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function isOv(t){if(t.est==='completada'||t.est==='incumplida')return false;return t.vence<today();}
@@ -1212,7 +1218,7 @@ function renderKpiDetalle(tipo){
 function renderDash(){
   var td=today();
   var en7=inWeek();
-  var d=new Date(td);
+  var d=new Date();
   var diasSemana=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   var meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var fechaLabel=diasSemana[d.getDay()]+', '+d.getDate()+' de '+meses[d.getMonth()];
@@ -1985,6 +1991,85 @@ function bindEqPendientes(vid){
   var btnC=wrap.querySelector('[data-eqcompid]');
   if(btnC)btnC.addEventListener('click',function(e){e.stopPropagation();verCompletadas=!verCompletadas;refreshEqPendientes(vid);});
 }
+function bindEqProyPanelContents(panel,pid,vid){
+  // Fases expandibles
+  var faseHdrsEq=panel.querySelectorAll('.fase-hdr');
+  for(var fhi=0;fhi<faseHdrsEq.length;fhi++){
+    (function(fhdr){
+      fhdr.onclick=function(ev){
+        ev.stopPropagation();
+        if(ev.target.closest('[data-tid]')){var tidEl=ev.target.closest('[data-tid]');openEditTarea(tidEl.dataset.tid);return;}
+        if(ev.target.closest('.proycli-hdr'))return;
+        var fid=fhdr.dataset.faseid;
+        var fp=document.getElementById(fid);
+        if(!fp)return;
+        var fopen=fp.style.display!=='none';
+        fp.style.display=fopen?'none':'block';
+        var farr=fhdr.querySelector('.fase-arrow');
+        if(farr)farr.textContent=fopen?'▶':'▼';
+      };
+    })(faseHdrsEq[fhi]);
+  }
+  // Clientes expandibles
+  var cliHdrs=panel.querySelectorAll('.proycli-hdr');
+  for(var chi=0;chi<cliHdrs.length;chi++){
+    (function(ch){
+      ch.onclick=function(ev){
+        ev.stopPropagation();
+        var clId=ch.dataset.clexpand;
+        var cp=document.getElementById(clId);
+        if(!cp)return;
+        var copen=cp.style.display!=='none';
+        cp.style.display=copen?'none':'block';
+        var carr=ch.querySelector('.proycli-arrow');
+        if(carr)carr.textContent=copen?'▼':'▲';
+      };
+    })(cliHdrs[chi]);
+  }
+  // Tareas
+  var tEls=panel.querySelectorAll('[data-tid]');
+  for(var ti=0;ti<tEls.length;ti++){
+    (function(tel){tel.onclick=function(ev){ev.stopPropagation();openEditTarea(tel.dataset.tid);};})(tEls[ti]);
+  }
+  // Checkboxes rápidos de completar
+  bindQuickChecks(panel,function(){
+    panel.innerHTML=renderProyExpand(pid,vid);
+    bindEqProyPanelContents(panel,pid,vid);
+  });
+  // Botones editar proyecto y nueva tarea
+  var btnEd=panel.querySelector('[id^="pdet-btn-edit-"]');
+  if(btnEd){(function(p){btnEd.onclick=function(ev){ev.stopPropagation();openProyectoModal(p);};})(pid);}
+  var btnNT=panel.querySelector('[id^="pdet-btn-nueva-tarea-"]');
+  if(btnNT){(function(p){btnNT.onclick=function(ev){ev.stopPropagation();openEditTareaConProy(p);};})(pid);}
+  // Botón + Agregar hito/cliente
+  var btnAddHitoEq=panel.querySelector('[id^="pdet-btn-addhito-"]');
+  if(btnAddHitoEq){(function(p,pn){btnAddHitoEq.onclick=function(ev){
+    ev.stopPropagation();
+    toggleAddHitoPicker(p,pn,function(){pn.innerHTML=renderProyExpand(p,vid);bindEqProyPanelContents(pn,p,vid);});
+  };})(pid,panel);}
+  // Botón dividir por hito
+  var btnSplitEq=panel.querySelector('[id^="pdet-btn-split-"]');
+  if(btnSplitEq){(function(p){btnSplitEq.onclick=function(ev){ev.stopPropagation();splitProyectoPorHito(p);};})(pid);}
+  // Botones + Agregar tarea a esta fase/cliente
+  var addTareaBtnsEq=panel.querySelectorAll('[data-addtarea-pid]');
+  for(var atiE=0;atiE<addTareaBtnsEq.length;atiE++){
+    (function(btn){
+      btn.onclick=function(ev){
+        ev.stopPropagation();
+        openEditTareaConProy(btn.dataset.addtareaPid,btn.dataset.addtareaFase||'',btn.dataset.addtareaCliid||'');
+      };
+    })(addTareaBtnsEq[atiE]);
+  }
+  // Botón ver/ocultar completadas
+  var btnComp3=panel.querySelector('[id^="pdet-btn-comp-"]');
+  if(btnComp3){(function(p,vv){btnComp3.onclick=function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;panel.innerHTML=renderProyExpand(p,vv);bindEqProyPanelContents(panel,p,vv);};})(pid,vid);}
+  // Reuniones vinculadas
+  var rEls3=panel.querySelectorAll('[data-rid]');
+  for(var rei2=0;rei2<rEls3.length;rei2++){
+    (function(rel){rel.onclick=function(ev){ev.stopPropagation();openDetalle(rel.dataset.rid);};})(rEls3[rei2]);
+  }
+  bindProyNov(panel,pid);
+}
 function renderVendedores(){
   var h='';
   h+='<div class="sh"><h2>Rendimiento por vendedor</h2><button class="btn btn-sm" id="btn-edit-eq">Editar equipo</button></div>';
@@ -2067,6 +2152,7 @@ function renderVendedores(){
     h+='</div>'; // cierre .vc
   }
   document.getElementById('vw-vendedores').innerHTML=h;
+  for(var vqi=0;vqi<st.vendedores.length;vqi++){bindEqPendientes(st.vendedores[vqi].id);}
   var beq=document.getElementById('btn-edit-eq');
   if(beq)beq.addEventListener('click',openEquipo);
   var vbtns=document.querySelectorAll('[data-vfilt]');
@@ -2110,82 +2196,7 @@ function renderVendedores(){
         panel.style.display=open?'none':'block';
         var arrow=hdr.querySelector('.eq-proy-arrow');
         if(arrow)arrow.textContent=open?'▼':'▲';
-        // Bindear siempre (no solo al abrir) para evitar problemas de estado
-        function bindPanelContents(){
-        // Fases expandibles
-        var faseHdrsEq=panel.querySelectorAll('.fase-hdr');
-        for(var fhi=0;fhi<faseHdrsEq.length;fhi++){
-          (function(fhdr){
-            fhdr.onclick=function(ev){
-              ev.stopPropagation();
-              if(ev.target.closest('[data-tid]')){var tidEl=ev.target.closest('[data-tid]');openEditTarea(tidEl.dataset.tid);return;}
-              if(ev.target.closest('.proycli-hdr'))return;
-              var fid=fhdr.dataset.faseid;
-              var fp=document.getElementById(fid);
-              if(!fp)return;
-              var fopen=fp.style.display!=='none';
-              fp.style.display=fopen?'none':'block';
-              var farr=fhdr.querySelector('.fase-arrow');
-              if(farr)farr.textContent=fopen?'▶':'▼';
-            };
-          })(faseHdrsEq[fhi]);
-        }
-        // Clientes expandibles
-        var cliHdrs=panel.querySelectorAll('.proycli-hdr');
-        for(var chi=0;chi<cliHdrs.length;chi++){
-          (function(ch){
-            ch.onclick=function(ev){
-              ev.stopPropagation();
-              var clId=ch.dataset.clexpand;
-              var cp=document.getElementById(clId);
-              if(!cp)return;
-              var copen=cp.style.display!=='none';
-              cp.style.display=copen?'none':'block';
-              var carr=ch.querySelector('.proycli-arrow');
-              if(carr)carr.textContent=copen?'▼':'▲';
-            };
-          })(cliHdrs[chi]);
-        }
-        // Tareas
-        var tEls=panel.querySelectorAll('[data-tid]');
-        for(var ti=0;ti<tEls.length;ti++){
-          (function(tel){tel.onclick=function(ev){ev.stopPropagation();openEditTarea(tel.dataset.tid);};})(tEls[ti]);
-        }
-        // Botones editar proyecto y nueva tarea
-        var btnEd=panel.querySelector('[id^="pdet-btn-edit-"]');
-        if(btnEd){(function(p){btnEd.onclick=function(ev){ev.stopPropagation();openProyectoModal(p);};})(pid);}
-        var btnNT=panel.querySelector('[id^="pdet-btn-nueva-tarea-"]');
-        if(btnNT){(function(p){btnNT.onclick=function(ev){ev.stopPropagation();openEditTareaConProy(p);};})(pid);}
-        // Botón + Agregar hito/cliente
-        var btnAddHitoEq=panel.querySelector('[id^="pdet-btn-addhito-"]');
-        if(btnAddHitoEq){(function(p,pn){btnAddHitoEq.onclick=function(ev){
-          ev.stopPropagation();
-          toggleAddHitoPicker(p,pn,function(){pn.innerHTML=renderProyExpand(p,vid);bindPanelContents();});
-        };})(pid,panel);}
-        // Botón dividir por hito
-        var btnSplitEq=panel.querySelector('[id^="pdet-btn-split-"]');
-        if(btnSplitEq){(function(p){btnSplitEq.onclick=function(ev){ev.stopPropagation();splitProyectoPorHito(p);};})(pid);}
-        // Botones + Agregar tarea a esta fase/cliente
-        var addTareaBtnsEq=panel.querySelectorAll('[data-addtarea-pid]');
-        for(var atiE=0;atiE<addTareaBtnsEq.length;atiE++){
-          (function(btn){
-            btn.onclick=function(ev){
-              ev.stopPropagation();
-              openEditTareaConProy(btn.dataset.addtareaPid,btn.dataset.addtareaFase||'',btn.dataset.addtareaCliid||'');
-            };
-          })(addTareaBtnsEq[atiE]);
-        }
-        // Botón ver/ocultar completadas
-        var btnComp3=panel.querySelector('[id^="pdet-btn-comp-"]');
-        if(btnComp3){(function(p,vv){btnComp3.onclick=function(ev){ev.stopPropagation();verCompletadas=!verCompletadas;panel.innerHTML=renderProyExpand(p,vv);bindPanelContents();};})(pid,vid);}
-        // Reuniones vinculadas
-        var rEls3=panel.querySelectorAll('[data-rid]');
-        for(var rei2=0;rei2<rEls3.length;rei2++){
-          (function(rel){rel.onclick=function(ev){ev.stopPropagation();openDetalle(rel.dataset.rid);};})(rEls3[rei2]);
-        }
-        bindProyNov(panel,pid);
-        }
-        bindPanelContents();
+        bindEqProyPanelContents(panel,pid,vid);
       };
     })(phdrs[pi2]);
   }
@@ -4885,6 +4896,7 @@ function _reabrirAnidados(scopeId){
     for(var k=0;k<hdrs.length;k++){
       if('eq-proy-expand-'+hdrs[k].dataset.eqvid+'-'+hdrs[k].dataset.eqpid===id){
         var arr=hdrs[k].querySelector('.eq-proy-arrow');if(arr)arr.textContent='▲';
+        bindEqProyPanelContents(el,hdrs[k].dataset.eqpid,hdrs[k].dataset.eqvid||'');
         break;
       }
     }
@@ -5428,7 +5440,7 @@ function exportResumenSemanal(){
   var dayOfWeek=now.getDay();
   var diffToMon=dayOfWeek===0?-6:1-dayOfWeek;
   var lunes=new Date(now);lunes.setDate(now.getDate()+diffToMon);
-  var lunesStr=lunes.toISOString().slice(0,10);
+  var lunesStr=fechaLocalISO(lunes);
 
   // KPIs
   var pipeline=0;var activosCnt=0;
