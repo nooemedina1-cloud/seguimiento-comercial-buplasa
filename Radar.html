@@ -310,6 +310,21 @@ function fechaLarga(){
   const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   return dias_[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
 }
+function haceLargo(iso){
+  if(!iso) return '';
+  const n = dias(iso, hoy());
+  if(n < 0) return 'empieza el ' + fmt(iso);
+  if(n < 45) return n <= 0 ? 'hoy' : n === 1 ? 'hace 1 día' : 'hace ' + n + ' días';
+  const m = Math.round(n / 30.4);
+  if(m < 12) return 'hace ' + m + ' meses';
+  const a = Math.floor(m / 12), r = m % 12;
+  return 'hace ' + a + (a === 1 ? ' año' : ' años') + (r ? ' y ' + r + ' m' : '');
+}
+function valorHTML(i){
+  let h = i.valor ? money(i.valor) : '';
+  if(i.aporte) h += (h ? '<br>' : '') + '<span class="muted" style="font-size:11px;font-weight:700">aporte ' + money(i.aporte) + '</span>';
+  return h;
+}
 function sum(list, fn){ return list.reduce((a, x) => a + (fn(x) || 0), 0); }
 
 /* ---------- estado ---------- */
@@ -480,6 +495,7 @@ function numeros(){
   return {
     act:act,
     valor:sum(act, i => i.valor),
+    aporte:sum(act, i => i.aporte),
     pond:sum(act, i => (i.valor || 0) * (i.prob || 0) / 100),
     pausadas:st.inis.filter(i => i.etapa === 'pausada').length,
     perdidas:st.inis.filter(i => i.etapa === 'perdida').length
@@ -553,7 +569,7 @@ function renderFiltros(){
   if(tab === 'todas'){
     h += '<select id="fl-etapa"><option value="activas"' + (F.etapa === 'activas' ? ' selected' : '') + '>Solo activas</option><option value="todas"' + (F.etapa === 'todas' ? ' selected' : '') + '>Todas las etapas</option>' +
       TODAS_ETAPAS.map(e => '<option value="' + e.id + '"' + (F.etapa === e.id ? ' selected' : '') + '>' + esc(e.corto) + '</option>').join('') + '</select>';
-    h += '<select id="fl-orden"><option value="ultima"' + (F.orden === 'ultima' ? ' selected' : '') + '>Orden: más tiempo sin movimiento</option><option value="paso"' + (F.orden === 'paso' ? ' selected' : '') + '>Orden: próximo paso</option><option value="valor"' + (F.orden === 'valor' ? ' selected' : '') + '>Orden: valor</option><option value="nombre"' + (F.orden === 'nombre' ? ' selected' : '') + '>Orden: nombre</option></select>';
+    h += '<select id="fl-orden"><option value="ultima"' + (F.orden === 'ultima' ? ' selected' : '') + '>Orden: más tiempo sin movimiento</option><option value="paso"' + (F.orden === 'paso' ? ' selected' : '') + '>Orden: próximo paso</option><option value="inicio"' + (F.orden === 'inicio' ? ' selected' : '') + '>Orden: más antiguas primero</option><option value="valor"' + (F.orden === 'valor' ? ' selected' : '') + '>Orden: valor</option><option value="nombre"' + (F.orden === 'nombre' ? ' selected' : '') + '>Orden: nombre</option></select>';
   }
   h += '</div>';
   $filtros.innerHTML = h;
@@ -565,7 +581,7 @@ function renderFiltros(){
 function atencionHTML(a){
   const n = numeros();
   let h = '<div class="kpi-grid">';
-  h += '<div class="kpi-card hl"><div class="kpi-l">Iniciativas activas</div><div class="kpi-v">' + n.act.length + '</div><div class="kpi-s">' + (n.valor ? money(n.valor) + ' en juego' : 'sin valor cargado') + '</div></div>';
+  h += '<div class="kpi-card hl"><div class="kpi-l">Iniciativas activas</div><div class="kpi-v">' + n.act.length + '</div><div class="kpi-s">' + (n.valor ? money(n.valor) + ' en juego' : 'sin valor cargado') + (n.aporte ? ' · aportes ' + money(n.aporte) : '') + '</div></div>';
   h += '<div class="kpi-card alert"><div class="kpi-l">Sin próximo paso</div><div class="kpi-v">' + a.sinPaso.length + '</div><div class="kpi-s">nadie sabe qué sigue</div></div>';
   h += '<div class="kpi-card"><div class="kpi-l">Frenadas</div><div class="kpi-v">' + (a.vencido.length + a.estancada.length + a.sinMov.length) + '</div><div class="kpi-s">' + a.vencido.length + ' paso vencido · ' + a.estancada.length + ' etapa estancada · ' + a.sinMov.length + ' sin movimiento</div></div>';
   h += '<div class="kpi-card"><div class="kpi-l">Pausadas para retomar</div><div class="kpi-v">' + a.pausa.length + '</div><div class="kpi-s">de ' + n.pausadas + ' pausadas en total</div></div>';
@@ -608,7 +624,7 @@ function arowHTML(x, tipo){
   return '<div class="arow" data-id="' + esc(i.id) + '"><div class="arow-main">' +
     '<div class="arow-info"><div class="arow-name" data-act="abrir" data-id="' + esc(i.id) + '">' + esc(i.nombre) + (i.cliente && i.cliente !== i.nombre ? ' <span class="muted">· ' + esc(i.cliente) + '</span>' : '') + '</div>' +
     '<div class="arow-reason">' + esc(x.razon) + (i.etapa === 'pausada' && i.motivo ? ' · Motivo: ' + esc(i.motivo) : '') + '</div></div>' +
-    '<div class="arow-meta">' + ((i.plan || []).length ? '<span title="' + esc(planTexto(i)) + '">' + barHTML(i) + '</span>' : '') + etapaBadge(i.etapa) + chipResp(i.resp) + (i.valor ? '<span class="tag">' + money(i.valor) + '</span>' : '') + '</div>' +
+    '<div class="arow-meta">' + ((i.plan || []).length ? '<span title="' + esc(planTexto(i)) + '">' + barHTML(i) + '</span>' : '') + etapaBadge(i.etapa) + chipResp(i.resp) + (i.valor ? '<span class="tag">' + money(i.valor) + '</span>' : '') + (i.aporte ? '<span class="tag warn" title="Aporte nuestro / monto a validar">aporte ' + money(i.aporte) + '</span>' : '') + '</div>' +
     '<div class="arow-acts">' + acts + '</div></div>' +
     '<div class="row-form" hidden><input type="text" class="rf-txt"><input type="date" class="rf-date">' +
     '<button class="btn btn-sm btn-p" data-act="rf-ok" data-id="' + esc(i.id) + '">Guardar</button><button class="btn btn-sm btn-g" data-act="rf-cancel">Cancelar</button></div></div>';
@@ -623,7 +639,7 @@ function cardHTML(i){
     (sub ? '<div class="tcard-s">' + esc(sub) + '</div>' : '') +
     ((i.plan || []).length ? '<div class="tcard-s" style="margin-bottom:3px">' + esc(planTexto(i)) + '</div>' + barHTML(i) : '') +
     (p && ACTIVAS.includes(i.etapa) ? '<div class="tcard-s">→ ' + esc(p.txt.length > 40 ? p.txt.slice(0, 40) + '…' : p.txt) + (p.fecha ? ' · ' + fmt(p.fecha) : '') + '</div>' : '') +
-    '<div class="tcard-f"><span>' + chipResp(i.resp) + '</span><span>' + (i.valor ? money(i.valor) : '') + '</span>' + flagsHTML(i) + '</div></div>';
+    '<div class="tcard-f"><span>' + chipResp(i.resp) + '</span><span style="text-align:right">' + valorHTML(i) + '</span>' + flagsHTML(i) + '</div></div>';
 }
 function tableroHTML(){
   const list = filtrar(st.inis);
@@ -678,13 +694,14 @@ function todasHTML(){
   const cmp = {
     ultima:(a, b) => (ultimaAct(a) < ultimaAct(b) ? -1 : ultimaAct(a) > ultimaAct(b) ? 1 : 0),
     paso:(a, b) => { const pa = proxPaso(a), pb = proxPaso(b); const fa = pa ? (pa.fecha || '9998') : '0000', fb = pb ? (pb.fecha || '9998') : '0000'; return fa < fb ? -1 : fa > fb ? 1 : 0; },
+    inicio:(a, b) => { const x = a.inicio || '9999', y = b.inicio || '9999'; return x < y ? -1 : x > y ? 1 : 0; },
     valor:(a, b) => (b.valor || 0) - (a.valor || 0),
     nombre:(a, b) => a.nombre.localeCompare(b.nombre)
   }[F.orden] || (() => 0);
   list = list.slice().sort(cmp);
   let h = '<div class="muted" style="margin-bottom:8px">' + list.length + (list.length === 1 ? ' iniciativa' : ' iniciativas') + '</div>';
-  h += '<div class="tbl-wrap"><table><thead><tr><th>Iniciativa</th><th>Cliente</th><th>Etapa</th><th>Plan por etapas</th><th>Resp.</th><th>Próximo paso</th><th>Última actividad</th><th class="r">Valor</th></tr></thead><tbody>';
-  if(!list.length) h += '<tr><td colspan="8" class="muted" style="padding:20px">No hay iniciativas con estos filtros.</td></tr>';
+  h += '<div class="tbl-wrap"><table><thead><tr><th>Iniciativa</th><th>Cliente</th><th>Etapa</th><th>Plan por etapas</th><th>Resp.</th><th>Próximo paso</th><th>Inicio</th><th>Última actividad</th><th class="r">Valor / aporte</th></tr></thead><tbody>';
+  if(!list.length) h += '<tr><td colspan="9" class="muted" style="padding:20px">No hay iniciativas con estos filtros.</td></tr>';
   list.forEach(i => {
     const act = ACTIVAS.includes(i.etapa), p = proxPaso(i), sd = dias(ultimaAct(i), h0);
     let paso = '<span class="muted">—</span>';
@@ -692,7 +709,8 @@ function todasHTML(){
     else if(act) paso = '<span class="red">Falta definirlo</span>';
     h += '<tr data-act="abrir" data-id="' + esc(i.id) + '"><td><b>' + esc(i.nombre) + '</b>' + (i.grupo ? '<div class="muted" style="font-size:11.5px">' + esc(i.grupo) + '</div>' : '') + '</td>' +
       '<td>' + esc(i.cliente || '—') + '</td><td>' + etapaBadge(i.etapa) + '</td><td>' + ((i.plan || []).length ? barHTML(i) + '<div class="muted" style="font-size:11.5px">' + esc(planTexto(i)) + '</div>' : '<span class="muted">—</span>') + '</td><td>' + chipResp(i.resp) + '</td><td>' + paso + '</td>' +
-      '<td class="' + (act && sd > st.config.diasSinMov ? 'amber' : '') + '">' + (i.actSinDato ? '<span class="muted">sin dato aún</span>' : hace(sd)) + '</td><td class="r">' + money(i.valor) + '</td></tr>';
+      '<td>' + (i.inicio ? fmtL(i.inicio) + '<div class="muted" style="font-size:11.5px">' + esc(haceLargo(i.inicio)) + '</div>' : '<span class="muted">—</span>') + '</td>' +
+      '<td class="' + (act && sd > st.config.diasSinMov ? 'amber' : '') + '">' + (i.actSinDato ? '<span class="muted">sin dato aún</span>' : hace(sd)) + '</td><td class="r">' + (valorHTML(i) || '—') + '</td></tr>';
   });
   return h + '</tbody></table></div>';
 }
@@ -701,7 +719,7 @@ function todasHTML(){
 function lrowHTML(i, fecha, extra){
   const sub = [i.cliente && i.cliente !== i.nombre ? i.cliente : '', i.grupo, extra].filter(Boolean).join(' · ');
   return '<div class="lrow"><div class="lrow-i"><div class="lrow-n" data-act="abrir" data-id="' + esc(i.id) + '">' + esc(i.nombre) + '</div><div class="lrow-s">' + esc(sub) + '</div></div>' +
-    '<div class="lrow-v">' + (i.valor ? money(i.valor) : '') + '</div><div class="muted">' + fmt(fecha) + '</div>' + chipResp(i.resp) + '</div>';
+    '<div class="lrow-v" style="text-align:right">' + valorHTML(i) + '</div><div class="muted">' + fmt(fecha) + '</div>' + chipResp(i.resp) + '</div>';
 }
 function logroCard(titulo, ico, items, fechaFn, extraFn){
   let h = '<div class="card"><div class="bucket-h"><span class="bucket-ico">' + ico + '</span><div><div class="bucket-t">' + esc(titulo) + '</div><div class="bucket-s">' + items.length + (items.length === 1 ? ' iniciativa' : ' iniciativas') + (sum(items, i => i.valor) ? ' · ' + money(sum(items, i => i.valor)) : '') + '</div></div></div>';
@@ -807,7 +825,7 @@ let draft = null, draftNuevo = false, draftEtapaOrig = '', draftPlanOrig = '';
 function openFicha(id, preset){
   const i = id ? st.inis.find(x => x.id === id) : null;
   draftNuevo = !i;
-  draft = i ? JSON.parse(JSON.stringify(i)) : {id:uid('in'), nombre:'', cliente:'', grupo:'', etapa:'idea', resp:'', valor:0, prob:0, notas:'', motivo:'', retomar:'', pasos:[], novedades:[], creada:hoy(), actualizada:hoy(), historial:[], origen:'manual'};
+  draft = i ? JSON.parse(JSON.stringify(i)) : {id:uid('in'), nombre:'', cliente:'', grupo:'', etapa:'idea', resp:'', valor:0, aporte:0, inicio:hoy(), prob:0, notas:'', motivo:'', retomar:'', pasos:[], novedades:[], creada:hoy(), actualizada:hoy(), historial:[], origen:'manual'};
   draftEtapaOrig = draft.etapa;
   draft.plan = draft.plan || [];
   draftPlanOrig = (planActual(draft) || {}).id || '';
@@ -837,6 +855,8 @@ function fichaHTML(d){
     '<div class="grid3"><div class="fg"><label>Probabilidad %</label><input id="f-prob" type="number" min="0" max="100" value="' + (d.prob || '') + '"></div>' +
     '<div class="fg" id="g-retomar"><label>Volver a mirarla el</label><input id="f-retomar" type="date" value="' + esc(d.retomar || '') + '"></div>' +
     '<div class="fg" id="g-motivo"><label>Motivo</label><input id="f-motivo" value="' + esc(d.motivo || '') + '" placeholder="¿Por qué?"></div></div>' +
+    '<div class="grid2"><div class="fg"><label>Fecha de inicio</label><input id="f-inicio" type="date" value="' + esc(d.inicio || '') + '"></div>' +
+    '<div class="fg"><label>Aporte nuestro / monto a validar ($)</label><input id="f-aporte" type="number" min="0" value="' + (d.aporte || '') + '" placeholder="Para acciones; no suma al pipeline"></div></div>' +
     '<div class="fg"><label>Notas</label><textarea id="f-notas">' + esc(d.notas || '') + '</textarea></div>' +
     '<div class="sec-t">Plan por etapas</div><div id="f-plan"></div>' +
     '<div class="sec-t">Próximos pasos</div><div id="f-pasos"></div>' +
@@ -928,7 +948,7 @@ function guardarFicha(){
   const etapa = g('f-etapa');
   const motivo = g('f-motivo').trim();
   if((etapa === 'pausada' || etapa === 'perdida') && !motivo && !confirm('¿Guardar sin motivo? Después cuesta recordar por qué se frenó.')) return;
-  Object.assign(draft, {nombre:nombre, cliente:g('f-cliente').trim(), grupo:g('f-grupo').trim(), resp:g('f-resp'), valor:+g('f-valor') || 0, prob:+g('f-prob') || 0, notas:g('f-notas').trim(), motivo:(etapa === 'pausada' || etapa === 'perdida') ? motivo : '', retomar:etapa === 'pausada' ? g('f-retomar') : ''});
+  Object.assign(draft, {nombre:nombre, cliente:g('f-cliente').trim(), grupo:g('f-grupo').trim(), resp:g('f-resp'), valor:+g('f-valor') || 0, aporte:+g('f-aporte') || 0, inicio:g('f-inicio'), prob:+g('f-prob') || 0, notas:g('f-notas').trim(), motivo:(etapa === 'pausada' || etapa === 'perdida') ? motivo : '', retomar:etapa === 'pausada' ? g('f-retomar') : ''});
   draft.historial = draft.historial || [];
   if(draftNuevo) draft.historial.push({fecha:hoy(), de:null, a:etapa});
   else if(etapa !== draftEtapaOrig) draft.historial.push({fecha:hoy(), de:draftEtapaOrig, a:etapa});
@@ -1056,7 +1076,7 @@ document.getElementById('file-json').addEventListener('change', e => {
 /* ===================== RESUMEN PARA DIRECCIÓN ===================== */
 function filaPres(i, derecha, sub){
   return '<div class="lrow"><div class="lrow-i"><div class="lrow-n" style="cursor:default">' + esc(i.nombre) + '</div><div class="lrow-s">' + esc(sub) + '</div></div>' +
-    '<div class="lrow-v">' + derecha + '</div>' + chipResp(i.resp) + '</div>';
+    '<div class="lrow-v" style="text-align:right">' + derecha + '</div>' + chipResp(i.resp) + '</div>';
 }
 function presBloque(titulo, ico, items, fn, max){
   max = max || 6;
@@ -1071,7 +1091,7 @@ function presentHTML(){
   let h = '<div class="pres-title"><div><h1>Radar comercial</h1><div class="sub">Buplasa · ' + esc(fechaLarga()) + '</div></div><div class="sub">Qué estamos haciendo y qué no podemos dejar escapar</div></div>';
 
   h += '<div class="kpi-grid">' +
-    '<div class="kpi-card hl"><div class="kpi-l">Iniciativas activas</div><div class="kpi-v">' + n.act.length + '</div><div class="kpi-s">' + (n.valor ? money(n.valor) + ' en juego' : '&nbsp;') + (n.pond ? ' · ' + money(n.pond) + ' ponderado' : '') + '</div></div>' +
+    '<div class="kpi-card hl"><div class="kpi-l">Iniciativas activas</div><div class="kpi-v">' + n.act.length + '</div><div class="kpi-s">' + (n.valor ? money(n.valor) + ' en juego' : '&nbsp;') + (n.pond ? ' · ' + money(n.pond) + ' ponderado' : '') + (n.aporte ? ' · aportes ' + money(n.aporte) : '') + '</div></div>' +
     '<div class="kpi-card"><div class="kpi-l">Concretadas este mes</div><div class="kpi-v">' + L.concretadas.length + '</div><div class="kpi-s">' + (sum(L.concretadas, i => i.valor) ? money(sum(L.concretadas, i => i.valor)) : '&nbsp;') + '</div></div>' +
     '<div class="kpi-card ' + (a.total ? 'alert' : '') + '"><div class="kpi-l">Necesitan atención</div><div class="kpi-v">' + a.total + '</div><div class="kpi-s">' + a.sinPaso.length + ' sin próximo paso</div></div>' +
     '<div class="kpi-card"><div class="kpi-l">Pausadas / perdidas</div><div class="kpi-v">' + n.pausadas + ' / ' + n.perdidas + '</div><div class="kpi-s">&nbsp;</div></div></div>';
@@ -1088,7 +1108,7 @@ function presentHTML(){
   if(conPlan.length){
     h += '<div class="pres-sec"><div class="sec-t">Avance por etapas</div><div class="card">';
     conPlan.sort((x, y) => planAvance(y).pct - planAvance(x).pct).slice(0, 14).forEach(i => {
-      h += '<div class="lrow"><div class="lrow-i"><div class="lrow-n" style="cursor:default">' + esc(i.nombre) + '</div><div class="lrow-s">' + esc(planTexto(i)) + (i.etapa === 'pausada' ? ' · FRENADA' + (i.motivo ? ': ' + esc(i.motivo) : '') : '') + '</div></div>' + barHTML(i) + chipResp(i.resp) + '</div>';
+      h += '<div class="lrow"><div class="lrow-i"><div class="lrow-n" style="cursor:default">' + esc(i.nombre) + '</div><div class="lrow-s">' + esc(planTexto(i)) + (i.inicio ? ' · iniciada ' + esc(haceLargo(i.inicio)) : '') + (i.etapa === 'pausada' ? ' · FRENADA' + (i.motivo ? ': ' + esc(i.motivo) : '') : '') + '</div></div>' + barHTML(i) + chipResp(i.resp) + '</div>';
     });
     if(conPlan.length > 14) h += '<div class="muted" style="padding-top:8px">y ' + (conPlan.length - 14) + ' más…</div>';
     h += '</div></div>';
@@ -1105,8 +1125,8 @@ function presentHTML(){
   h += '</div>';
 
   h += '<div class="pres-sec"><div class="sec-t">Logros de ' + esc(L.rango.label.toLowerCase()) + '</div><div class="two-col">';
-  h += '<div>' + presBloque('Concretadas', '🏁', L.concretadas, i => filaPres(i, money(i.valor), [i.cliente !== i.nombre ? i.cliente : '', i.grupo, fmt(fechaEvento(i, 'concretada'))].filter(Boolean).join(' · ')), 8) + '</div>';
-  h += '<div>' + presBloque('Puestas en marcha', '🚀', L.marcha, i => filaPres(i, money(i.valor), [i.cliente !== i.nombre ? i.cliente : '', i.grupo, fmt(fechaEvento(i, 'marcha'))].filter(Boolean).join(' · ')), 8) + '</div>';
+  h += '<div>' + presBloque('Concretadas', '🏁', L.concretadas, i => filaPres(i, valorHTML(i), [i.cliente !== i.nombre ? i.cliente : '', i.grupo, fmt(fechaEvento(i, 'concretada'))].filter(Boolean).join(' · ')), 8) + '</div>';
+  h += '<div>' + presBloque('Puestas en marcha', '🚀', L.marcha, i => filaPres(i, valorHTML(i), [i.cliente !== i.nombre ? i.cliente : '', i.grupo, fmt(fechaEvento(i, 'marcha'))].filter(Boolean).join(' · ')), 8) + '</div>';
   h += '</div></div>';
 
   const paus = st.inis.filter(i => i.etapa === 'pausada'), perdM = L.perdidas;
@@ -1236,7 +1256,7 @@ function convertirViejo(old, opts){
     pasos.forEach(p => { if(p.hecho && p.fecha && p.fecha <= h && p.fecha > act) act = p.fecha; });
     const pp = o.etapa === 'pausada' || o.etapa === 'perdida';
     return {id:uid('in'), nombre:o.nombre, cliente:o.cliente || '', grupo:o.grupo || '', etapa:o.etapa, resp:o.resp || '', valor:+o.valor || 0, prob:+o.prob || 0,
-      notas:o.notas || '', motivo:pp ? (o.motivo || '') : '', retomar:'', pasos:pasos, novedades:novs, creada:h, actualizada:act || h, actSinDato:!act, historial:[], origen:'import', origenKey:o.key};
+      notas:o.notas || '', motivo:pp ? (o.motivo || '') : '', retomar:'', pasos:pasos, novedades:novs, creada:h, actualizada:act || h, actSinDato:!act, inicio:o.inicio || '', aporte:0, historial:[], origen:'import', origenKey:o.key};
   }
 
   (old.proyectos || []).forEach(p => {
@@ -1251,12 +1271,12 @@ function convertirViejo(old, opts){
       add(key, label, mk(o));
     };
     const cliIni = (cl, fase, tsCli) => ({
-      key:key + '|' + (fase || '') + '|' + cl.nombre, nombre:cl.nombre + ' — ' + (fase || label), cliente:cl.nombre, grupo:label,
+      key:key + '|' + (fase || '') + '|' + cl.nombre, nombre:cl.nombre + ' — ' + (fase || label), cliente:cl.nombre, grupo:label, inicio:p.inicio || '',
       etapa:override(mapEtapaCli(cl), cl.nombre), resp:respDe(p, tsCli, cliByNombre[cl.nombre]),
       valor:cl.valor, prob:cl.prob, notas:cl.notas, motivo:cl.notas, novedades:cl.novedades, pasos:toPasos(tsCli)
     });
     const genIni = (nombre, fase, tsG) => ({
-      key:key + '|' + (fase || '') + '|', nombre:nombre, grupo:label, etapa:etapaTareas(tsG, p.resultado), resp:respDe(p, tsG, null), pasos:toPasos(tsG)
+      key:key + '|' + (fase || '') + '|', nombre:nombre, grupo:label, inicio:p.inicio || '', etapa:etapaTareas(tsG, p.resultado), resp:respDe(p, tsG, null), pasos:toPasos(tsG)
     });
     if(p.tipo === 'comercial'){
       clis.forEach(cl => addP(cliIni(cl, '', ts.filter(t => matchCli(t, cl)))));
@@ -1293,7 +1313,7 @@ function convertirViejo(old, opts){
     const c = cliById[cid];
     if(c.tipo === 'proveedor' && !opts.proveedores){ provSet[cid] = true; return; }
     const tsC = porCli[cid];
-    add('cli', 'Clientes sin proyecto (tareas sueltas y prospectos)', mk({key:'c:' + cid + '|tareas', nombre:c.nombre + ' — seguimiento general', cliente:c.nombre, grupo:'Sin proyecto',
+    add('cli', 'Clientes sin proyecto (tareas sueltas y prospectos)', mk({key:'c:' + cid + '|tareas', nombre:c.nombre + ' — seguimiento general', cliente:c.nombre, grupo:'Sin proyecto', inicio:c.inicio || '',
       etapa:override(etapaTareas(tsC, ''), c.nombre), resp:respDe(null, tsC, c), pasos:toPasos(tsC)}));
   });
 
@@ -1316,7 +1336,7 @@ function convertirViejo(old, opts){
       if(c.tipo === 'proveedor' && !opts.proveedores){ provSet[c.id] = true; return; }
       if(c.etapa === 'inactivo'){ stats.inactivos++; return; }
       const etapa = c.etapa === 'postergado' ? 'pausada' : c.etapa === 'cancelado' ? 'perdida' : 'contacto';
-      add('cli', 'Clientes sin proyecto (tareas sueltas y prospectos)', mk({key:'c:' + c.id, nombre:c.nombre, cliente:c.nombre, grupo:'Sin proyecto', etapa:etapa,
+      add('cli', 'Clientes sin proyecto (tareas sueltas y prospectos)', mk({key:'c:' + c.id, nombre:c.nombre, cliente:c.nombre, grupo:'Sin proyecto', inicio:c.inicio || '', etapa:etapa,
         resp:(c.vIds || [])[0] || '', novedades:c.novedades, notas:c.notas || '', pasos:[]}));
     });
   }
@@ -1351,9 +1371,9 @@ function resumenEtapas(items){
 }
 function renderImport(){
   const conv = imp.conv, existentes = {};
-  st.inis.forEach(i => { if(i.origenKey) existentes[i.origenKey] = true; });
-  let total = 0, nuevos = 0;
-  conv.groups.forEach(g => { if(imp.unsel[g.key]) return; g.items.forEach(i => { total++; if(!existentes[i.origenKey]) nuevos++; }); });
+  st.inis.forEach(i => { if(i.origenKey) existentes[i.origenKey] = i; });
+  let total = 0, nuevos = 0, completar = 0;
+  conv.groups.forEach(g => { if(imp.unsel[g.key]) return; g.items.forEach(i => { total++; const ex = existentes[i.origenKey]; if(!ex) nuevos++; else if(!ex.inicio && i.inicio) completar++; }); });
   const o = imp.opts, s = conv.stats;
   let h = '<div class="mh"><h2>Importar de la app anterior</h2><button class="xb" data-close="ov-import">×</button></div><div class="mb">' +
     '<div class="opts">' +
@@ -1365,20 +1385,24 @@ function renderImport(){
     h += '<div class="imp-group"><input type="checkbox" data-g="' + esc(g.key) + '"' + (imp.unsel[g.key] ? '' : ' checked') + '><div style="flex:1"><b>' + esc(g.label) + '</b> <span class="tag">' + g.items.length + '</span><div class="muted" style="font-size:12px">' + esc(resumenEtapas(g.items)) + '</div></div></div>';
   });
   h += '<div class="pres-note" style="margin-top:14px">' + (s.internas ? s.internas + ' tareas internas (sin cliente ni proyecto) no se traen: eso es agenda personal. ' : '') + (s.inactivos ? s.inactivos + ' clientes inactivos omitidos. ' : '') + 'Lo importado no tiene fecha de cierre, así que no cuenta en los logros de un mes puntual.</div></div>' +
-    '<div class="mf"><div class="muted">' + total + ' iniciativas seleccionadas' + (total - nuevos ? ' · ' + (total - nuevos) + ' ya estaban importadas' : '') + '</div><div class="mfr"><button class="btn btn-g" data-close="ov-import">Cancelar</button><button class="btn btn-p" data-iok="1"' + (nuevos ? '' : ' disabled') + '>Importar ' + nuevos + '</button></div></div>';
+    '<div class="mf"><div class="muted">' + total + ' iniciativas seleccionadas' + (total - nuevos ? ' · ' + (total - nuevos) + ' ya estaban importadas' : '') + '</div><div class="mfr"><button class="btn btn-g" data-close="ov-import">Cancelar</button><button class="btn btn-p" data-iok="1"' + (nuevos || completar ? '' : ' disabled') + '>' + (completar ? 'Importar ' + nuevos + ' y completar ' + completar + ' fechas de inicio' : 'Importar ' + nuevos) + '</button></div></div>';
   document.getElementById('import-modal').innerHTML = h;
 }
 function aplicarImport(){
   const existentes = {};
-  st.inis.forEach(i => { if(i.origenKey) existentes[i.origenKey] = true; });
+  st.inis.forEach(i => { if(i.origenKey) existentes[i.origenKey] = i; });
   imp.conv.personas.forEach(p => { if(!st.personas.some(x => x.id === p.id)) st.personas.push(p); });
-  let nuevos = 0;
+  let nuevos = 0, completadas = 0;
   imp.conv.groups.forEach(g => {
     if(imp.unsel[g.key]) return;
-    g.items.forEach(i => { if(existentes[i.origenKey]) return; st.inis.push(i); existentes[i.origenKey] = true; nuevos++; });
+    g.items.forEach(i => {
+      const ex = existentes[i.origenKey];
+      if(ex){ if(!ex.inicio && i.inicio){ ex.inicio = i.inicio; completadas++; } return; }
+      st.inis.push(i); existentes[i.origenKey] = i; nuevos++;
+    });
   });
   save(); closeOv('ov-import'); tab = 'atencion'; render();
-  toast(nuevos + ' iniciativas importadas. Revisá la pestaña Atención: ahí aparece lo que no tiene próximo paso.');
+  toast(completadas && !nuevos ? 'Listo: se completaron ' + completadas + ' fechas de inicio.' : nuevos + ' iniciativas importadas' + (completadas ? ' y ' + completadas + ' fechas de inicio completadas' : '') + '. Revisá la pestaña Atención.');
 }
 document.getElementById('import-modal').addEventListener('click', e => {
   const c = e.target.closest('[data-close]'); if(c){ closeOv(c.dataset.close); return; }
