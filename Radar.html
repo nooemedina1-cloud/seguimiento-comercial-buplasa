@@ -25,7 +25,7 @@ button,input,select,textarea{font-family:inherit;font-size:14px;color:inherit}
 .brand-tagline{font-size:13px;color:rgba(255,255,255,.8);font-weight:600}
 .header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .menu-wrap{position:relative}
-.menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:6px;min-width:250px;z-index:30}
+.menu{position:fixed;background:#fff;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:6px;min-width:250px;z-index:200}
 .menu button{display:block;width:100%;text-align:left;background:none;border:none;padding:9px 12px;border-radius:9px;cursor:pointer;color:var(--gr);font-weight:700}
 .menu button:hover{background:var(--lt);color:var(--gd)}
 .menu hr{border:none;border-top:1px solid var(--line);margin:4px 0}
@@ -74,6 +74,16 @@ button,input,select,textarea{font-family:inherit;font-size:14px;color:inherit}
 .eb-concretada{background:var(--g);color:#fff}
 .eb-pausada{background:#ece8f5;color:#5b4b8a}
 .eb-perdida{background:var(--errbg);color:var(--err)}
+.eb-activo{background:#d7efe8;color:#1f7a55}.eb-postergado{background:#ece8f5;color:#5b4b8a}.eb-cancelado{background:var(--errbg);color:var(--err)}.eb-inactivo{background:#eef1f1;color:#616160}
+.crow{display:grid;grid-template-columns:1.2fr 1fr 1.3fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center}
+.crow input{border:1px solid #cfe6e5;border-radius:9px;padding:6px 9px;background:#fff;outline:none;width:100%;min-width:0}
+.fg label.chk,.chk{display:inline-flex;align-items:center;gap:6px;margin:0 14px 6px 0;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;color:var(--gr)}
+.fg .chk input,.chk input{width:16px;height:16px;padding:0;border:none;accent-color:var(--g)}
+.adj{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
+.adj-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.adj-lbl{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1.5px dashed #cfe6e5;border-radius:12px;padding:8px 14px;color:var(--gd);font-weight:800;margin-top:6px}
+.eini{display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);cursor:pointer}
+.eini:hover .lrow-n{color:var(--g)}
 .av{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:10.5px;font-weight:900;flex-shrink:0}
 .tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;background:var(--lt);color:var(--gd)}
 .tag.bad{background:var(--errbg);color:var(--err)}.tag.warn{background:var(--y);color:var(--warn)}
@@ -82,7 +92,7 @@ button,input,select,textarea{font-family:inherit;font-size:14px;color:inherit}
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 4px;align-items:center}
 .filters input,.filters select{border:1px solid #cfe6e5;background:#fff;border-radius:10px;padding:7px 11px;outline:none}
 .filters input:focus,.filters select:focus{border-color:var(--g)}
-.filters input[type=search]{min-width:220px}
+.filters input[type=search]{min-width:250px}
 
 /* Atención */
 .buckets{display:grid;grid-template-columns:1fr;gap:16px}
@@ -207,6 +217,7 @@ body.export{background:var(--bg)}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--gr);color:#fff;padding:10px 20px;border-radius:30px;font-weight:700;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 
 @media(max-width:900px){
+ .crow{grid-template-columns:1fr 1fr}
  .kpi-grid{grid-template-columns:1fr 1fr}
  .two-col,.strips,.grid3,.grid2{grid-template-columns:1fr}
  .header{padding:18px 0 44px}.header-content{padding:0 16px}.main,.tabs-bar{padding-left:16px;padding-right:16px}
@@ -248,6 +259,7 @@ body.export{background:var(--bg)}
  <button class="tab-btn" data-tab="tablero">Tablero</button>
  <button class="tab-btn" data-tab="logros">Logros</button>
  <button class="tab-btn" data-tab="todas">Todas</button>
+ <button class="tab-btn" data-tab="clientes">Clientes y proveedores</button>
 </nav>
 <main class="main"><div id="filtros"></div><div id="view"></div></main>
 </div>
@@ -255,9 +267,11 @@ body.export{background:var(--bg)}
 <div id="present" hidden></div>
 
 <div class="overlay" id="ov-ficha"><div class="modal" id="ficha-modal"></div></div>
+<div class="overlay" id="ov-ent"><div class="modal" id="ent-modal"></div></div>
 <div class="overlay" id="ov-import"><div class="modal" id="import-modal"></div></div>
 <div class="overlay" id="ov-config"><div class="modal" id="config-modal"></div></div>
 <input type="file" id="file-json" accept=".json,application/json" hidden>
+<input type="file" id="file-adj" multiple hidden>
 <div id="toast" hidden></div>
 
 <script>
@@ -328,7 +342,7 @@ function valorHTML(i){
 function sum(list, fn){ return list.reduce((a, x) => a + (fn(x) || 0), 0); }
 
 /* ---------- estado ---------- */
-function defaultState(){ return {v:1, config:{diasSinMov:15, diasRetomar:14, diasEtapa:30}, personas:[], inis:[], plantillas:[]}; }
+function defaultState(){ return {v:1, config:{diasSinMov:15, diasRetomar:14, diasEtapa:30}, personas:[], inis:[], plantillas:[], entidades:[]}; }
 function load(){
   try{
     const s = localStorage.getItem(LS_KEY);
@@ -340,7 +354,8 @@ function load(){
       config:Object.assign(base.config, d.config || {}),
       personas:Array.isArray(d.personas) ? d.personas : [],
       inis:Array.isArray(d.inis) ? d.inis : [],
-      plantillas:Array.isArray(d.plantillas) ? d.plantillas : []
+      plantillas:Array.isArray(d.plantillas) ? d.plantillas : [],
+      entidades:Array.isArray(d.entidades) ? d.entidades : []
     };
   }catch(e){ return defaultState(); }
 }
@@ -540,7 +555,7 @@ function render(){
   const a = calcAtencion();
   const tabAt = document.querySelector('[data-tab="atencion"]');
   tabAt.innerHTML = 'Atención' + (a.total ? '<span class="cnt">' + a.total + '</span>' : '');
-  if(!st.inis.length){ $filtros.innerHTML = ''; $view.innerHTML = emptyHTML(); return; }
+  if(!st.inis.length && tab !== 'clientes'){ $filtros.innerHTML = ''; $view.innerHTML = emptyHTML(); return; }
   renderFiltros();
   renderView(a);
 }
@@ -549,6 +564,7 @@ function renderView(a){
   if(tab === 'atencion') $view.innerHTML = atencionHTML(a);
   else if(tab === 'tablero'){ $view.innerHTML = tableroHTML(); bindTablero(); }
   else if(tab === 'logros') $view.innerHTML = logrosHTML();
+  else if(tab === 'clientes') $view.innerHTML = clientesHTML();
   else $view.innerHTML = todasHTML();
 }
 function emptyHTML(){
@@ -560,6 +576,7 @@ function emptyHTML(){
 
 /* ---------- filtros (solo Tablero y Todas) ---------- */
 function renderFiltros(){
+  if(tab === 'clientes'){ renderFiltrosEnt(); return; }
   if(tab !== 'tablero' && tab !== 'todas'){ $filtros.innerHTML = ''; return; }
   const grupos = [...new Set(st.inis.map(i => i.grupo).filter(Boolean))].sort();
   let h = '<div class="filters">';
@@ -835,18 +852,19 @@ function openFicha(id, preset){
   renderFichaPlan();
   renderFichaListas();
   syncCamposEtapa();
+  actualizarLinkCliente();
   openOv('ov-ficha');
   if(draftNuevo) document.getElementById('f-nombre').focus();
   else if(preset && preset.etapa === 'pausada') document.getElementById('f-motivo').focus();
 }
 function fichaHTML(d){
-  const clientes = [...new Set(st.inis.map(i => i.cliente).filter(Boolean))].sort();
+  const clientes = [...new Set(st.entidades.map(e => e.nombre).concat(st.inis.map(i => i.cliente)).filter(Boolean))].sort();
   const grupos = [...new Set(st.inis.map(i => i.grupo).filter(Boolean))].sort();
   const etOpts = TODAS_ETAPAS.map(e => '<option value="' + e.id + '"' + (d.etapa === e.id ? ' selected' : '') + '>' + esc(e.lbl) + '</option>').join('');
   const rOpts = '<option value="">— Sin asignar —</option>' + st.personas.map(p => '<option value="' + esc(p.id) + '"' + (d.resp === p.id ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('');
   return '<div class="mh"><h2>' + (draftNuevo ? 'Nueva iniciativa' : 'Iniciativa') + '</h2><button class="xb" data-close="ov-ficha">×</button></div><div class="mb">' +
     '<div class="fg"><label>Nombre</label><input id="f-nombre" value="' + esc(d.nombre) + '" placeholder="Ej: Cajas display — Carrefour"></div>' +
-    '<div class="grid2"><div class="fg"><label>Cliente</label><input id="f-cliente" list="dl-cli" value="' + esc(d.cliente) + '"></div>' +
+    '<div class="grid2"><div class="fg"><label>Cliente <span id="f-cli-link"></span></label><input id="f-cliente" list="dl-cli" value="' + esc(d.cliente) + '"></div>' +
     '<div class="fg"><label>Grupo / línea</label><input id="f-grupo" list="dl-gru" value="' + esc(d.grupo) + '" placeholder="Ej: Propuestas comerciales"></div></div>' +
     '<datalist id="dl-cli">' + clientes.map(c => '<option value="' + esc(c) + '">').join('') + '</datalist><datalist id="dl-gru">' + grupos.map(c => '<option value="' + esc(c) + '">').join('') + '</datalist>' +
     '<div class="grid3"><div class="fg"><label>Etapa</label><select id="f-etapa">' + etOpts + '</select></div>' +
@@ -961,6 +979,8 @@ function guardarFicha(){
 }
 document.getElementById('ficha-modal').addEventListener('click', e => {
   const c = e.target.closest('[data-close]'); if(c){ closeOv(c.dataset.close); return; }
+  const vl = e.target.closest('[data-verent]');
+  if(vl){ e.preventDefault(); openEnt(vl.dataset.verent); return; }
   const pl = e.target.closest('[data-pl]');
   if(pl){ accionPlan(pl.dataset.pl, pl.closest('.prow')); return; }
   const fa = e.target.closest('[data-fa]');
@@ -980,6 +1000,7 @@ document.getElementById('ficha-modal').addEventListener('click', e => {
   if(nd){ draft.novedades = draft.novedades.filter(n => n.id !== nd.dataset.nd); renderFichaListas(); }
 });
 document.getElementById('ficha-modal').addEventListener('input', e => {
+  if(e.target.id === 'f-cliente'){ actualizarLinkCliente(); return; }
   const t = e.target, row = t.closest('.prow'); if(!row) return;
   if(t.dataset.plf === 'nombre'){ const q = draft.plan.find(x => x.id === row.dataset.plid); if(q) q.nombre = t.value; return; }
   const p = draft.pasos.find(x => x.id === row.dataset.pid); if(!p) return;
@@ -1007,7 +1028,7 @@ document.getElementById('ficha-modal').addEventListener('keydown', e => {
 });
 
 /* ----- fondo de modales ----- */
-['ov-ficha', 'ov-import', 'ov-config'].forEach(id => {
+['ov-ficha', 'ov-ent', 'ov-import', 'ov-config'].forEach(id => {
   document.getElementById(id).addEventListener('mousedown', e => { if(e.target.id === id) closeOv(id); });
 });
 
@@ -1055,7 +1076,16 @@ function descargar(nombre, contenido, tipo){
   a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
-function backup(){ descargar('radar_backup_' + hoy() + '.json', JSON.stringify(st, null, 1), 'application/json'); toast('Copia descargada'); }
+async function backup(){
+  const out = JSON.parse(JSON.stringify(st)); out.adjuntosData = {};
+  const ids = []; st.entidades.forEach(e => (e.adjuntos || []).forEach(a => ids.push(a.id)));
+  let fallo = 0;
+  for(const id of ids){
+    try{ const v = await dbGet(id); if(v) out.adjuntosData[id] = {nombre:v.nombre, tipo:v.tipo, b64:bufToB64(v.buf)}; else fallo++; }catch(e){ fallo++; }
+  }
+  descargar('radar_backup_' + hoy() + '.json', JSON.stringify(out), 'application/json');
+  toast(fallo ? 'Copia descargada, pero ' + fallo + ' adjuntos no se pudieron incluir' : 'Copia descargada' + (ids.length ? ' (con ' + ids.length + ' adjuntos)' : ''));
+}
 let fileModo = '';
 function pedirArchivo(modo){ fileModo = modo; const f = document.getElementById('file-json'); f.value = ''; f.click(); }
 document.getElementById('file-json').addEventListener('change', e => {
@@ -1067,8 +1097,7 @@ document.getElementById('file-json').addEventListener('change', e => {
     if(fileModo === 'restore'){
       if(!Array.isArray(data.inis)){ alert('Este archivo no parece una copia del Radar.'); return; }
       if(!confirm('Esto reemplaza todo lo que hay hoy en el Radar por el contenido de la copia. ¿Continuar?')) return;
-      st = Object.assign(defaultState(), data); st.config = Object.assign(defaultState().config, data.config || {});
-      save(); toast('Copia restaurada'); render();
+      restaurarDesde(data);
     } else if(fileModo === 'import') importarDesdeObjeto(data, 'archivo');
   };
   r.readAsText(file);
@@ -1166,11 +1195,17 @@ function menuAccion(k){
   else if(k === 'restore') pedirArchivo('restore');
   else if(k === 'config') openConfig();
   else if(k === 'nueva') openFicha(null);
+  else if(k === 'nueva-ent') openEnt(null);
 }
 document.getElementById('btn-nueva').addEventListener('click', () => openFicha(null));
 document.getElementById('btn-presentar').addEventListener('click', presentar);
 document.getElementById('btn-exportar').addEventListener('click', exportarResumen);
-document.getElementById('btn-datos').addEventListener('click', e => { e.stopPropagation(); const m = document.getElementById('menu-datos'); m.hidden = !m.hidden; });
+document.getElementById('btn-datos').addEventListener('click', e => {
+  e.stopPropagation();
+  const m = document.getElementById('menu-datos');
+  if(m.hidden){ const r = e.currentTarget.getBoundingClientRect(); m.style.top = (r.bottom + 6) + 'px'; m.style.right = Math.max(8, window.innerWidth - r.right) + 'px'; }
+  m.hidden = !m.hidden;
+});
 document.getElementById('menu-datos').addEventListener('click', e => { const b = e.target.closest('[data-menu]'); if(b) menuAccion(b.dataset.menu); });
 document.addEventListener('click', e => { if(!e.target.closest('.menu-wrap')) document.getElementById('menu-datos').hidden = true; });
 document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if(b){ tab = b.dataset.tab; render(); } });
@@ -1178,7 +1213,7 @@ $view.addEventListener('change', e => { if(e.target.id === 'lg-p'){ LOGRO_P = e.
 document.addEventListener('keydown', e => {
   if(e.key !== 'Escape') return;
   if(!document.getElementById('present').hidden){ cerrarPresentacion(); return; }
-  ['ov-ficha', 'ov-import', 'ov-config'].forEach(closeOv);
+  ['ov-ficha', 'ov-ent', 'ov-import', 'ov-config'].forEach(closeOv);
 });
 /* ===================== IMPORTAR DE LA APP ANTERIOR ===================== */
 /* Regla de conversión:
@@ -1341,7 +1376,24 @@ function convertirViejo(old, opts){
     });
   }
   stats.proveedores = Object.keys(provSet).length;
-  return {personas:(old.vendedores || []).map(v => ({id:v.id, nombre:v.nombre})), groups:order.map(k => groups[k]), stats:stats};
+  /* directorio de clientes y proveedores (con contactos, ficha y adjuntos) */
+  const entidades = [];
+  if(opts.directorio !== false){
+    (old.clientes || []).forEach(c => {
+      if(!c.nombre) return;
+      let contactos = (c.contactos || []).map(ct => ({id:uid('ct'), nombre:ct.nombre || '', cargo:ct.cargo || '', email:ct.email || '', tel:ct.tel || ''}));
+      if(!contactos.length && c.contacto && String(c.contacto).trim()) contactos = [{id:uid('ct'), nombre:String(c.contacto).trim(), cargo:'', email:'', tel:''}];
+      entidades.push({
+        id:uid('en'), nombre:c.nombre, tipo:c.tipo === 'proveedor' ? 'proveedor' : 'cliente',
+        estado:['activo', 'postergado', 'cancelado', 'inactivo'].indexOf(c.etapa) >= 0 ? c.etapa : 'activo',
+        pais:c.pais || '', resp:(c.vIds || []).filter(v => vendIds.indexOf(v) >= 0), desde:c.inicio || '',
+        contactos:contactos, notas:c.notas || '', ficha:c.ficha || '',
+        novedades:(c.novedades || []).filter(n => n && n.txt).map(n => ({id:uid('nv'), txt:n.txt, fecha:n.fecha || h})),
+        adjuntos:[], _adjs:(c.adjuntos || []).filter(a => a && a.data), creada:h, actualizada:h, origenKey:'cli:' + c.id
+      });
+    });
+  }
+  return {personas:(old.vendedores || []).map(v => ({id:v.id, nombre:v.nombre})), groups:order.map(k => groups[k]), entidades:entidades, stats:stats};
 }
 
 /* ----- interfaz del importador ----- */
@@ -1360,7 +1412,7 @@ function importarDesdeObjeto(old, origen){
   if(!old || !Array.isArray(old.proyectos) || !Array.isArray(old.tareas)){
     alert('No reconozco este formato: tiene que ser el respaldo de la app Seguimiento Comercial (con proyectos y tareas).'); return;
   }
-  imp = {old:old, opts:{descartarViejos:true, proveedores:false, clientesSinProyecto:true}, unsel:{}, origen:origen};
+  imp = {old:old, opts:{descartarViejos:true, proveedores:false, clientesSinProyecto:true, directorio:true}, unsel:{}, origen:origen};
   imp.conv = convertirViejo(old, imp.opts);
   renderImport(); openOv('ov-import');
 }
@@ -1375,8 +1427,12 @@ function renderImport(){
   let total = 0, nuevos = 0, completar = 0;
   conv.groups.forEach(g => { if(imp.unsel[g.key]) return; g.items.forEach(i => { total++; const ex = existentes[i.origenKey]; if(!ex) nuevos++; else if(!ex.inicio && i.inicio) completar++; }); });
   const o = imp.opts, s = conv.stats;
+  const entEx = {}; st.entidades.forEach(e => { if(e.origenKey) entEx[e.origenKey] = true; entEx['n:' + norm(e.nombre)] = true; });
+  const entNuevas = (conv.entidades || []).filter(e => !entEx[e.origenKey] && !entEx['n:' + norm(e.nombre)]);
+  const adjEnt = sum(entNuevas, e => (e._adjs || []).length);
   let h = '<div class="mh"><h2>Importar de la app anterior</h2><button class="xb" data-close="ov-import">×</button></div><div class="mb">' +
     '<div class="opts">' +
+    '<label><input type="checkbox" data-opt="directorio"' + (o.directorio ? ' checked' : '') + '> Traer el directorio de clientes y proveedores <span class="muted">(' + entNuevas.length + ' nuevos' + (adjEnt ? ' · ' + adjEnt + ' archivos adjuntos' : '') + ')</span></label>' +
     '<label><input type="checkbox" data-opt="descartarViejos"' + (o.descartarViejos ? ' checked' : '') + '> No traer pasos pendientes vencidos hace más de 45 días' + (s.descartados ? ' <span class="muted">(' + s.descartados + ' descartados)</span>' : '') + '</label>' +
     '<label><input type="checkbox" data-opt="clientesSinProyecto"' + (o.clientesSinProyecto ? ' checked' : '') + '> Traer también los clientes que no están en ningún proyecto</label>' +
     '<label><input type="checkbox" data-opt="proveedores"' + (o.proveedores ? ' checked' : '') + '> Incluir proveedores' + (s.proveedores && !o.proveedores ? ' <span class="muted">(' + s.proveedores + ' omitidos)</span>' : '') + '</label></div>' +
@@ -1385,10 +1441,10 @@ function renderImport(){
     h += '<div class="imp-group"><input type="checkbox" data-g="' + esc(g.key) + '"' + (imp.unsel[g.key] ? '' : ' checked') + '><div style="flex:1"><b>' + esc(g.label) + '</b> <span class="tag">' + g.items.length + '</span><div class="muted" style="font-size:12px">' + esc(resumenEtapas(g.items)) + '</div></div></div>';
   });
   h += '<div class="pres-note" style="margin-top:14px">' + (s.internas ? s.internas + ' tareas internas (sin cliente ni proyecto) no se traen: eso es agenda personal. ' : '') + (s.inactivos ? s.inactivos + ' clientes inactivos omitidos. ' : '') + 'Lo importado no tiene fecha de cierre, así que no cuenta en los logros de un mes puntual.</div></div>' +
-    '<div class="mf"><div class="muted">' + total + ' iniciativas seleccionadas' + (total - nuevos ? ' · ' + (total - nuevos) + ' ya estaban importadas' : '') + '</div><div class="mfr"><button class="btn btn-g" data-close="ov-import">Cancelar</button><button class="btn btn-p" data-iok="1"' + (nuevos || completar ? '' : ' disabled') + '>' + (completar ? 'Importar ' + nuevos + ' y completar ' + completar + ' fechas de inicio' : 'Importar ' + nuevos) + '</button></div></div>';
+    '<div class="mf"><div class="muted">' + total + ' iniciativas seleccionadas' + (total - nuevos ? ' · ' + (total - nuevos) + ' ya estaban importadas' : '') + '</div><div class="mfr"><button class="btn btn-g" data-close="ov-import">Cancelar</button><button class="btn btn-p" data-iok="1"' + (nuevos || completar || entNuevas.length ? '' : ' disabled') + '>' + (nuevos || entNuevas.length ? 'Importar ' + [nuevos ? nuevos + ' iniciativas' : '', entNuevas.length ? entNuevas.length + ' clientes/proveedores' : ''].filter(Boolean).join(' y ') + (completar ? ' · completar ' + completar + ' fechas' : '') : 'Completar ' + completar + ' fechas de inicio') + '</button></div></div>';
   document.getElementById('import-modal').innerHTML = h;
 }
-function aplicarImport(){
+async function aplicarImport(){
   const existentes = {};
   st.inis.forEach(i => { if(i.origenKey) existentes[i.origenKey] = i; });
   imp.conv.personas.forEach(p => { if(!st.personas.some(x => x.id === p.id)) st.personas.push(p); });
@@ -1401,8 +1457,28 @@ function aplicarImport(){
       st.inis.push(i); existentes[i.origenKey] = i; nuevos++;
     });
   });
-  save(); closeOv('ov-import'); tab = 'atencion'; render();
-  toast(completadas && !nuevos ? 'Listo: se completaron ' + completadas + ' fechas de inicio.' : nuevos + ' iniciativas importadas' + (completadas ? ' y ' + completadas + ' fechas de inicio completadas' : '') + '. Revisá la pestaña Atención.');
+  /* directorio */
+  let entN = 0, archivos = 0, sinArchivos = 0;
+  if(imp.opts.directorio !== false){
+    const claves = {}; st.entidades.forEach(e => { if(e.origenKey) claves[e.origenKey] = true; claves['n:' + norm(e.nombre)] = true; });
+    for(const e of (imp.conv.entidades || [])){
+      if(claves[e.origenKey] || claves['n:' + norm(e.nombre)]) continue;
+      for(const a of (e._adjs || [])){
+        const id = uid('ad');
+        try{
+          await dbPut(id, {buf:dataUrlToBuf(a.data), tipo:a.tipo || 'application/octet-stream', nombre:a.nombre});
+          e.adjuntos.push({id:id, nombre:a.nombre || 'archivo', tipo:a.tipo || '', size:a.tamanio || 0, fecha:hoy()}); archivos++;
+        }catch(x){ sinArchivos++; }
+      }
+      delete e._adjs; st.entidades.push(e); claves[e.origenKey] = true; claves['n:' + norm(e.nombre)] = true; entN++;
+    }
+  }
+  save(); closeOv('ov-import'); tab = entN && !nuevos && !completadas ? 'clientes' : 'atencion'; render();
+  const partes = [];
+  if(nuevos) partes.push(nuevos + ' iniciativas');
+  if(entN) partes.push(entN + ' clientes/proveedores' + (archivos ? ' con ' + archivos + ' archivos' : ''));
+  if(completadas) partes.push(completadas + ' fechas de inicio completadas');
+  toast((partes.length ? 'Importado: ' + partes.join(' · ') + '.' : 'No había nada nuevo para importar.') + (sinArchivos ? ' No se pudieron guardar ' + sinArchivos + ' archivos adjuntos.' : ''));
 }
 document.getElementById('import-modal').addEventListener('click', e => {
   const c = e.target.closest('[data-close]'); if(c){ closeOv(c.dataset.close); return; }
@@ -1424,6 +1500,268 @@ document.getElementById('import-modal').addEventListener('change', e => {
   if(t.dataset.opt){ imp.opts[t.dataset.opt] = t.checked; imp.conv = convertirViejo(imp.old, imp.opts); renderImport(); }
 });
 
+/* ===================== CLIENTES Y PROVEEDORES ===================== */
+/* Directorio con una ficha por cliente o proveedor. Los datos de texto van con el resto del Radar;
+   los archivos adjuntos se guardan aparte (IndexedDB) para no ocupar el espacio de localStorage. */
+const ESTADOS_ENT = [['activo', 'Activo'], ['postergado', 'Postergado'], ['cancelado', 'Cancelado'], ['inactivo', 'Inactivo']];
+const MAX_ADJ = 10, MAX_ADJ_MB = 10;
+let FE = {q:'', tipo:'', estado:'activos'};
+
+function norm(s){ return String(s == null ? '' : s).trim().toLowerCase(); }
+function estadoEntLbl(id){ const e = ESTADOS_ENT.find(x => x[0] === id); return e ? e[1] : id; }
+function entBadge(id){ return '<span class="eb eb-' + esc(id) + '">' + esc(estadoEntLbl(id)) + '</span>'; }
+function iniciativasDe(ent){ const n = norm(ent.nombre); return n ? st.inis.filter(i => norm(i.cliente) === n) : []; }
+function entPorNombre(nombre){ const n = norm(nombre); return n ? (st.entidades.find(e => norm(e.nombre) === n) || null) : null; }
+function kb(n){ return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+
+/* ---------- archivos (IndexedDB) ---------- */
+const DB_NAME = 'radar_buplasa_archivos', DB_STORE = 'archivos';
+function dbOpen(){
+  return new Promise((res, rej) => {
+    if(!window.indexedDB){ rej(new Error('este navegador no permite guardar archivos')); return; }
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(DB_STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error || new Error('no se pudo abrir el almacén de archivos'));
+  });
+}
+function dbTx(modo, fn){
+  return dbOpen().then(db => new Promise((res, rej) => {
+    const tx = db.transaction(DB_STORE, modo); let out;
+    try{ out = fn(tx.objectStore(DB_STORE)); }catch(e){ rej(e); return; }
+    tx.oncomplete = () => { db.close(); res(out && out.result !== undefined ? out.result : undefined); };
+    tx.onerror = () => { db.close(); rej(tx.error); };
+    tx.onabort = () => { db.close(); rej(tx.error || new Error('operación cancelada')); };
+  }));
+}
+function dbPut(id, val){ return dbTx('readwrite', s => s.put(val, id)); }
+function dbGet(id){ return dbTx('readonly', s => s.get(id)); }
+function dbDel(id){ return dbTx('readwrite', s => s.delete(id)); }
+function dbClear(){ return dbTx('readwrite', s => s.clear()); }
+function bufToB64(buf){
+  const b = new Uint8Array(buf); let s = ''; const T = 0x8000;
+  for(let i = 0; i < b.length; i += T) s += String.fromCharCode.apply(null, b.subarray(i, i + T));
+  return btoa(s);
+}
+function b64ToBuf(b64){
+  const bin = atob(b64), a = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return a.buffer;
+}
+function dataUrlToBuf(u){ return b64ToBuf(u.slice(u.indexOf(',') + 1)); }
+function leerArchivo(file){
+  if(file.arrayBuffer) return file.arrayBuffer();
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsArrayBuffer(file); });
+}
+async function restaurarDesde(data){
+  const adj = data.adjuntosData || {};
+  const nuevo = Object.assign(defaultState(), data); delete nuevo.adjuntosData;
+  nuevo.config = Object.assign(defaultState().config, data.config || {});
+  let fallo = false;
+  try{
+    await dbClear();
+    for(const id of Object.keys(adj)) await dbPut(id, {buf:b64ToBuf(adj[id].b64), tipo:adj[id].tipo, nombre:adj[id].nombre});
+  }catch(e){ fallo = true; }
+  st = nuevo; save(); render();
+  toast(fallo ? 'Copia restaurada, pero los archivos adjuntos no se pudieron recuperar' : 'Copia restaurada');
+}
+
+/* ---------- listado ---------- */
+function renderFiltrosEnt(){
+  const opt = (v, l, sel) => '<option value="' + v + '"' + (sel === v ? ' selected' : '') + '>' + l + '</option>';
+  $filtros.innerHTML = '<div class="filters"><input type="search" id="fe-q" placeholder="Buscar cliente o contacto…" value="' + esc(FE.q) + '">' +
+    '<select id="fe-tipo">' + opt('', 'Clientes y proveedores', FE.tipo) + opt('cliente', 'Solo clientes', FE.tipo) + opt('proveedor', 'Solo proveedores', FE.tipo) + '</select>' +
+    '<select id="fe-estado">' + opt('activos', 'Activos', FE.estado) + opt('todos', 'Todos los estados', FE.estado) + ESTADOS_ENT.filter(e => e[0] !== 'activo').map(e => opt(e[0], e[1], FE.estado)).join('') + '</select>' +
+    '<button class="btn btn-p btn-sm" data-entnew="1" style="margin-left:auto">+ Nuevo cliente / proveedor</button></div>';
+  const on = (id, k, ev) => { const el = document.getElementById(id); if(el) el.addEventListener(ev, () => { FE[k] = el.value; renderView(); }); };
+  on('fe-q', 'q', 'input'); on('fe-tipo', 'tipo', 'change'); on('fe-estado', 'estado', 'change');
+}
+function clientesHTML(){
+  if(!st.entidades.length){
+    return '<div class="card empty-state"><h2>Todavía no hay clientes ni proveedores</h2><p>Acá va la ficha de cada uno: contactos, responsables, notas, archivos y su historia. Podés traer los que ya tenías en la app anterior o cargarlos de a uno.</p>' +
+      '<button class="btn btn-p" data-menu="import">Importar de la app anterior</button> <button class="btn btn-g" data-menu="nueva-ent">Crear el primero</button></div>';
+  }
+  const q = FE.q.trim().toLowerCase();
+  const list = st.entidades.filter(e => {
+    if(FE.tipo && e.tipo !== FE.tipo) return false;
+    if(FE.estado === 'activos' && e.estado !== 'activo') return false;
+    if(FE.estado !== 'activos' && FE.estado !== 'todos' && e.estado !== FE.estado) return false;
+    if(q && !((e.nombre + ' ' + (e.pais || '') + ' ' + (e.contactos || []).map(c => c.nombre).join(' ')).toLowerCase().includes(q))) return false;
+    return true;
+  }).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const nCli = st.entidades.filter(e => e.tipo === 'cliente').length, nProv = st.entidades.length - nCli;
+  let h = '<div class="muted" style="margin-bottom:8px">' + list.length + ' de ' + st.entidades.length + ' · ' + nCli + ' clientes · ' + nProv + ' proveedores</div>';
+  h += '<div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Estado</th><th>Responsables</th><th>Contacto principal</th><th>Iniciativas activas</th><th>Última novedad</th></tr></thead><tbody>';
+  if(!list.length) h += '<tr><td colspan="7" class="muted" style="padding:20px">No hay resultados con estos filtros.</td></tr>';
+  list.forEach(e => {
+    const ins = iniciativasDe(e), act = ins.filter(i => ACTIVAS.includes(i.etapa));
+    const c0 = (e.contactos || [])[0];
+    const nov = (e.novedades || []).slice().sort((a, b) => (b.fecha || '') < (a.fecha || '') ? -1 : 1)[0];
+    let iniTxt = act.length ? '<b>' + act.length + '</b>' + (sum(act, i => i.valor) ? ' · ' + money(sum(act, i => i.valor)) : '') : '<span class="muted">0</span>';
+    if(!act.length && e.tipo === 'cliente' && e.estado === 'activo') iniTxt += ' <span class="tag warn" title="Cliente activo sin ninguna iniciativa en marcha">sin iniciativas</span>';
+    h += '<tr data-ent="' + esc(e.id) + '"><td><b>' + esc(e.nombre) + '</b>' + (e.pais ? '<div class="muted" style="font-size:11.5px">' + esc(e.pais) + '</div>' : '') + '</td>' +
+      '<td><span class="tag' + (e.tipo === 'proveedor' ? ' warn' : '') + '">' + (e.tipo === 'proveedor' ? 'Proveedor' : 'Cliente') + '</span></td><td>' + entBadge(e.estado) + '</td>' +
+      '<td><span style="display:inline-flex;gap:3px">' + (e.resp || []).map(chipResp).join('') + '</span></td>' +
+      '<td>' + (c0 ? esc(c0.nombre) + (c0.cargo ? '<div class="muted" style="font-size:11.5px">' + esc(c0.cargo) + '</div>' : '') + ((e.contactos || []).length > 1 ? '<div class="muted" style="font-size:11.5px">+' + ((e.contactos || []).length - 1) + ' más</div>' : '') : '<span class="muted">—</span>') + '</td>' +
+      '<td>' + iniTxt + '</td><td>' + (nov ? fmt(nov.fecha) + '<div class="muted" style="font-size:11.5px">' + esc(nov.txt.length > 38 ? nov.txt.slice(0, 38) + '…' : nov.txt) + '</div>' : '<span class="muted">—</span>') + '</td></tr>';
+  });
+  return h + '</tbody></table></div>';
+}
+
+/* ---------- ficha ---------- */
+let eDraft = null, eNuevo = false, eNombreOrig = '', ePend = {}, eQuitar = [];
+function openEnt(id, preset){
+  const e = id ? st.entidades.find(x => x.id === id) : null;
+  eNuevo = !e;
+  eDraft = e ? JSON.parse(JSON.stringify(e)) : {id:uid('en'), nombre:'', tipo:'cliente', estado:'activo', pais:'Argentina', resp:[], desde:hoy(), contactos:[], notas:'', ficha:'', novedades:[], adjuntos:[], creada:hoy(), actualizada:hoy(), origenKey:''};
+  eDraft.resp = eDraft.resp || []; eDraft.contactos = eDraft.contactos || []; eDraft.novedades = eDraft.novedades || []; eDraft.adjuntos = eDraft.adjuntos || [];
+  if(preset) Object.assign(eDraft, preset);
+  eNombreOrig = eDraft.nombre; ePend = {}; eQuitar = [];
+  document.getElementById('ent-modal').innerHTML = entFichaHTML(eDraft);
+  renderEntListas(); openOv('ov-ent');
+  if(eNuevo) document.getElementById('e-nombre').focus();
+}
+function entFichaHTML(d){
+  const opts = (arr, sel) => arr.map(x => '<option value="' + x[0] + '"' + (sel === x[0] ? ' selected' : '') + '>' + esc(x[1]) + '</option>').join('');
+  const resps = st.personas.map(p => '<label class="chk"><input type="checkbox" data-er="' + esc(p.id) + '"' + (d.resp.indexOf(p.id) >= 0 ? ' checked' : '') + '> ' + esc(p.nombre) + '</label>').join('') || '<span class="muted">Cargá al equipo en "⋯ Datos → Configuración".</span>';
+  return '<div class="mh"><h2>' + (eNuevo ? 'Nuevo cliente / proveedor' : 'Ficha') + '</h2><button class="xb" data-eclose="1">×</button></div><div class="mb">' +
+    '<div class="grid2"><div class="fg"><label>Nombre</label><input id="e-nombre" value="' + esc(d.nombre) + '" placeholder="Ej: ILKO Task"></div><div class="fg"><label>País</label><input id="e-pais" value="' + esc(d.pais || '') + '"></div></div>' +
+    '<div class="grid3"><div class="fg"><label>Tipo</label><select id="e-tipo">' + opts([['cliente', 'Cliente'], ['proveedor', 'Proveedor']], d.tipo) + '</select></div>' +
+    '<div class="fg"><label>Estado</label><select id="e-estado">' + opts(ESTADOS_ENT, d.estado) + '</select></div>' +
+    '<div class="fg"><label>Desde</label><input id="e-desde" type="date" value="' + esc(d.desde || '') + '"></div></div>' +
+    '<div class="fg"><label>Responsables</label><div>' + resps + '</div></div>' +
+    '<div class="sec-t">Contactos</div><div id="e-contactos"></div><button class="btn btn-sm btn-g" data-ec="add" style="width:100%">+ Agregar contacto</button>' +
+    '<div class="fg" style="margin-top:14px"><label>Notas</label><textarea id="e-notas" rows="3" placeholder="Contexto, observaciones…">' + esc(d.notas || '') + '</textarea></div>' +
+    '<div class="fg"><label>Ficha del cliente</label><textarea id="e-ficha" rows="6" placeholder="Historia de la relación, contexto estratégico, acuerdos previos, características…">' + esc(d.ficha || '') + '</textarea></div>' +
+    '<div class="sec-t">Archivos adjuntos</div><div id="e-adjuntos"></div><label class="adj-lbl" for="file-adj" data-eadj="1">📎 Adjuntar archivos <span class="muted" style="font-weight:600">(hasta ' + MAX_ADJ + ' · ' + MAX_ADJ_MB + ' MB c/u)</span></label>' +
+    '<div class="sec-t">Novedades</div><div class="addrow"><input type="text" id="e-nov-txt" placeholder="Qué pasó o qué se acordó…"><button class="btn btn-sm btn-p" data-ec="addnov">Agregar</button></div><div id="e-nov"></div>' +
+    '<div class="sec-t">Iniciativas con este ' + (d.tipo === 'proveedor' ? 'proveedor' : 'cliente') + '</div><div id="e-inis"></div></div>' +
+    '<div class="mf"><div>' + (eNuevo ? '' : '<button class="btn btn-d btn-sm" data-ec="del">Eliminar</button>') + '</div><div class="mfr"><button class="btn btn-g" data-eclose="1">Cancelar</button><button class="btn btn-p" data-ec="save">Guardar</button></div></div>';
+}
+function renderEntListas(){
+  const d = eDraft;
+  document.getElementById('e-contactos').innerHTML = d.contactos.length ? d.contactos.map(c =>
+    '<div class="crow" data-ctid="' + esc(c.id) + '"><input data-cf="nombre" placeholder="Nombre" value="' + esc(c.nombre) + '"><input data-cf="cargo" placeholder="Cargo / área" value="' + esc(c.cargo) + '">' +
+    '<input data-cf="email" placeholder="Email" value="' + esc(c.email) + '"><input data-cf="tel" placeholder="Teléfono" value="' + esc(c.tel) + '"><button class="bi" data-ec="delct" title="Quitar">×</button></div>').join('')
+    : '<div class="muted" style="margin-bottom:6px">Sin contactos todavía.</div>';
+  document.getElementById('e-adjuntos').innerHTML = d.adjuntos.length ? d.adjuntos.map(a =>
+    '<div class="adj" data-adid="' + esc(a.id) + '"><span>📎</span><span class="adj-n" title="' + esc(a.nombre) + '">' + esc(a.nombre) + '</span><span class="muted">' + kb(a.size || 0) + (ePend[a.id] ? ' · sin guardar' : '') + '</span>' +
+    '<button class="btn btn-sm btn-g" data-ec="dl">Descargar</button><button class="bi" data-ec="deladj" title="Quitar">×</button></div>').join('')
+    : '<div class="muted">Sin archivos.</div>';
+  const nv = d.novedades.slice().reverse();
+  document.getElementById('e-nov').innerHTML = nv.length ? nv.map(n =>
+    '<div class="nov"><div class="nov-t">' + esc(n.txt) + '<div class="nov-d">' + fmtL(n.fecha) + '</div></div><button class="bi" data-nd="' + esc(n.id) + '" title="Quitar">×</button></div>').join('') : '<div class="muted">Sin novedades aún.</div>';
+  const box = document.getElementById('e-inis');
+  if(eNuevo){ box.innerHTML = '<div class="muted">Guardá la ficha para poder vincularle iniciativas.</div>'; return; }
+  const ins = iniciativasDe(d);
+  box.innerHTML = (ins.length ? ins.map(i => {
+    const p = proxPaso(i);
+    return '<div class="eini" data-eini="' + esc(i.id) + '"><div class="lrow-i"><div class="lrow-n">' + esc(i.nombre) + '</div><div class="lrow-s">' + esc((p && ACTIVAS.includes(i.etapa) ? '→ ' + p.txt + (p.fecha ? ' · ' + fmt(p.fecha) : '') : (i.grupo || ''))) + '</div></div>' + ((i.plan || []).length ? barHTML(i) : '') + etapaBadge(i.etapa) + '</div>';
+  }).join('') : '<div class="muted">Todavía no tiene iniciativas.</div>') +
+    '<button class="btn btn-sm btn-g" data-ec="newini" style="margin-top:8px">+ Nueva iniciativa para ' + esc(d.nombre || 'este cliente') + '</button>';
+}
+function actualizarLinkCliente(){
+  const el = document.getElementById('f-cli-link'), inp = document.getElementById('f-cliente'); if(!el || !inp) return;
+  const e = entPorNombre(inp.value);
+  el.innerHTML = e ? '<a href="#" data-verent="' + esc(e.id) + '" style="text-transform:none;letter-spacing:0;font-weight:800">· ver ficha</a>' : '';
+}
+function agregarNovEnt(){
+  const t = document.getElementById('e-nov-txt'); const txt = t.value.trim(); if(!txt) return false;
+  eDraft.novedades.push({id:uid('nv'), txt:txt, fecha:hoy()}); t.value = ''; renderEntListas(); return true;
+}
+async function agregarArchivos(files){
+  const lista = Array.from(files || []); let rechazados = [];
+  for(const f of lista){
+    if(eDraft.adjuntos.length >= MAX_ADJ){ rechazados.push(f.name + ' (máximo ' + MAX_ADJ + ' archivos)'); continue; }
+    if(f.size > MAX_ADJ_MB * 1048576){ rechazados.push(f.name + ' (supera ' + MAX_ADJ_MB + ' MB)'); continue; }
+    try{
+      const buf = await leerArchivo(f), id = uid('ad');
+      eDraft.adjuntos.push({id:id, nombre:f.name, tipo:f.type || 'application/octet-stream', size:f.size, fecha:hoy()});
+      ePend[id] = {buf:buf, tipo:f.type || 'application/octet-stream', nombre:f.name};
+    }catch(e){ rechazados.push(f.name + ' (no se pudo leer)'); }
+  }
+  renderEntListas();
+  if(rechazados.length) alert('No se agregaron:\n• ' + rechazados.join('\n• '));
+}
+async function descargarAdj(a){
+  let v = ePend[a.id];
+  if(!v){ try{ v = await dbGet(a.id); }catch(e){ alert('No pude leer el archivo: ' + e.message); return; } }
+  if(!v){ toast('No encuentro ese archivo en este navegador'); return; }
+  const url = URL.createObjectURL(new Blob([v.buf], {type:v.tipo || 'application/octet-stream'}));
+  const l = document.createElement('a'); l.href = url; l.download = a.nombre; document.body.appendChild(l); l.click(); document.body.removeChild(l);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+async function guardarEnt(){
+  agregarNovEnt();
+  const g = id => document.getElementById(id).value;
+  const nombre = g('e-nombre').trim();
+  if(!nombre){ toast('Ponele un nombre'); document.getElementById('e-nombre').focus(); return; }
+  const dup = st.entidades.find(x => x.id !== eDraft.id && norm(x.nombre) === norm(nombre));
+  if(dup && !confirm('Ya existe «' + dup.nombre + '» en el directorio. ¿Guardar igual?')) return;
+  const resp = Array.from(document.querySelectorAll('#ent-modal [data-er]')).filter(c => c.checked).map(c => c.dataset.er);
+  eDraft.contactos = eDraft.contactos.filter(c => (c.nombre || c.email || c.tel || c.cargo || '').trim());
+  Object.assign(eDraft, {nombre:nombre, pais:g('e-pais').trim(), tipo:g('e-tipo'), estado:g('e-estado'), desde:g('e-desde'), notas:g('e-notas').trim(), ficha:g('e-ficha').trim(), resp:resp, actualizada:hoy()});
+  try{
+    for(const id of Object.keys(ePend)) if(eDraft.adjuntos.some(a => a.id === id)) await dbPut(id, ePend[id]);
+    for(const id of eQuitar) await dbDel(id);
+  }catch(e){ alert('No se pudieron guardar los archivos adjuntos (' + e.message + '). Probá de nuevo o quitá los adjuntos.'); return; }
+  if(!eNuevo && norm(eNombreOrig) !== norm(nombre)){
+    let n = 0; st.inis.forEach(i => { if(norm(i.cliente) === norm(eNombreOrig)){ i.cliente = nombre; n++; } });
+    if(n) toast('Se actualizó el nombre en ' + n + ' iniciativas');
+  }
+  if(eNuevo) st.entidades.push(eDraft);
+  else { const ix = st.entidades.findIndex(x => x.id === eDraft.id); if(ix >= 0) st.entidades[ix] = eDraft; }
+  save(); closeOv('ov-ent'); toast('Guardado'); actualizarLinkCliente(); render();
+}
+async function eliminarEnt(){
+  const n = iniciativasDe(eDraft).length;
+  if(!confirm('¿Eliminar «' + eDraft.nombre + '» del directorio? Se borran sus contactos, notas y archivos.' + (n ? ' Sus ' + n + ' iniciativas se mantienen.' : ''))) return;
+  try{ for(const a of eDraft.adjuntos) await dbDel(a.id); }catch(e){}
+  st.entidades = st.entidades.filter(x => x.id !== eDraft.id);
+  save(); closeOv('ov-ent'); toast('Eliminado'); render();
+}
+function cerrarEnt(){ closeOv('ov-ent'); }
+document.getElementById('ent-modal').addEventListener('click', e => {
+  if(e.target.closest('[data-eclose]')){ cerrarEnt(); return; }
+  const ei = e.target.closest('[data-eini]'); if(ei){ closeOv('ov-ent'); openFicha(ei.dataset.eini); return; }
+  const nd = e.target.closest('[data-nd]'); if(nd){ eDraft.novedades = eDraft.novedades.filter(n => n.id !== nd.dataset.nd); renderEntListas(); return; }
+  const b = e.target.closest('[data-ec]'); if(!b) return;
+  const a = b.dataset.ec;
+  if(a === 'add'){ eDraft.contactos.push({id:uid('ct'), nombre:'', cargo:'', email:'', tel:''}); renderEntListas(); const inp = document.querySelector('#e-contactos .crow:last-child input'); if(inp) inp.focus(); }
+  else if(a === 'delct'){ const id = b.closest('.crow').dataset.ctid; eDraft.contactos = eDraft.contactos.filter(c => c.id !== id); renderEntListas(); }
+  else if(a === 'addnov') agregarNovEnt();
+  else if(a === 'dl'){ const id = b.closest('.adj').dataset.adid; const ad = eDraft.adjuntos.find(x => x.id === id); if(ad) descargarAdj(ad); }
+  else if(a === 'deladj'){
+    const id = b.closest('.adj').dataset.adid;
+    if(ePend[id]) delete ePend[id]; else eQuitar.push(id);
+    eDraft.adjuntos = eDraft.adjuntos.filter(x => x.id !== id); renderEntListas();
+  }
+  else if(a === 'save') guardarEnt();
+  else if(a === 'del') eliminarEnt();
+  else if(a === 'newini'){ closeOv('ov-ent'); openFicha(null, {cliente:eDraft.nombre}); }
+});
+document.getElementById('ent-modal').addEventListener('input', e => {
+  const row = e.target.closest('.crow'); if(!row || !e.target.dataset.cf) return;
+  const c = eDraft.contactos.find(x => x.id === row.dataset.ctid); if(c) c[e.target.dataset.cf] = e.target.value;
+});
+document.getElementById('ent-modal').addEventListener('change', e => {
+  if(e.target.id === 'e-tipo'){ /* solo cambia el rótulo al guardar */ }
+});
+document.getElementById('ent-modal').addEventListener('keydown', e => {
+  if(e.key === 'Enter' && e.target.id === 'e-nov-txt'){ e.preventDefault(); agregarNovEnt(); }
+});
+document.getElementById('file-adj').addEventListener('change', e => {
+  const files = e.target.files; if(!files || !files.length || !eDraft) return;
+  agregarArchivos(files).then(() => { e.target.value = ''; });
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(x){}
+});
+
+/* ---------- clicks en el listado ---------- */
+document.addEventListener('click', e => {
+  const n = e.target.closest('[data-entnew]'); if(n){ openEnt(null); return; }
+  const r = e.target.closest('[data-ent]');
+  if(r && r.closest('#view')) openEnt(r.dataset.ent);
+});
 /* ===================== ARRANQUE ===================== */
 render();
 
